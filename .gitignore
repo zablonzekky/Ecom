@@ -1,0 +1,28 @@
+# --- Global ignore rules for both frontend and backend ---
+
+# Node dependencies
+**/node_modules/
+**/.pnp
+**/.pnp.js
+
+# Python virtual environments
+**/env/
+**/venv/
+**/.venv/
+
+# Environment files
+**/.env
+**/*.env
+**/.env.local
+**/.env.development.local
+**/.env.test.local
+**/.env.production.local
+
+# Build and coverage
+**/build/
+**/dist/
+**/coverage/
+
+# Miscellaneous
+**/.DS_Store
+**/*.log
