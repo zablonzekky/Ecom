@@ -1,6 +1,19 @@
 from pathlib import Path
 from datetime import timedelta
+import os
+from pathlib import Path
+from dotenv import load_dotenv
 
+# Load environment variables
+load_dotenv()
+
+# M-PESA Configuration
+MPESA_CONSUMER_KEY = os.getenv('MPESA_CONSUMER_KEY')
+MPESA_CONSUMER_SECRET = os.getenv('MPESA_CONSUMER_SECRET')
+MPESA_SHORTCODE = os.getenv('MPESA_SHORTCODE')
+MPESA_PASSKEY = os.getenv('MPESA_PASSKEY')
+MPESA_ENVIRONMENT = os.getenv('MPESA_ENVIRONMENT', 'sandbox')
+MPESA_CALLBACK_URL = os.getenv('MPESA_CALLBACK_URL')
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
