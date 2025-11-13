@@ -3,26 +3,71 @@
 const API_BASE_URL = "http://localhost:8000/api";
 
 const api = {
+  // GET request
   get: async (endpoint, token = null) => {
     const headers = { "Content-Type": "application/json" };
     if (token) headers["Authorization"] = `Bearer ${token}`;
 
     const response = await fetch(`${API_BASE_URL}${endpoint}`, { headers });
-    if (!response.ok) throw new Error("Network response was not ok");
-    return response.json();
+
+    // Parse JSON safely
+    const data = await response.json().catch(() => ({}));
+
+    // Throw parsed JSON for error handling if response not OK
+    if (!response.ok) throw data;
+
+    return data;
   },
 
-  post: async (endpoint, data, token = null) => {
+  // POST request
+  post: async (endpoint, payload, token = null) => {
     const headers = { "Content-Type": "application/json" };
     if (token) headers["Authorization"] = `Bearer ${token}`;
 
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       method: "POST",
       headers,
-      body: JSON.stringify(data),
+      body: JSON.stringify(payload),
     });
-    if (!response.ok) throw new Error("Failed to post data");
-    return response.json();
+
+    // Parse JSON safely
+    const data = await response.json().catch(() => ({}));
+
+    // Throw parsed JSON for error handling if response not OK
+    if (!response.ok) throw data;
+
+    return data;
+  },
+
+  // Optional: PUT request
+  put: async (endpoint, payload, token = null) => {
+    const headers = { "Content-Type": "application/json" };
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      method: "PUT",
+      headers,
+      body: JSON.stringify(payload),
+    });
+
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw data;
+    return data;
+  },
+
+  // Optional: DELETE request
+  delete: async (endpoint, token = null) => {
+    const headers = { "Content-Type": "application/json" };
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      method: "DELETE",
+      headers,
+    });
+
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw data;
+    return data;
   },
 };
 

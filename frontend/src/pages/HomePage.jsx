@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
 import { ArrowRight, Truck, Shield, RefreshCw, Star } from "lucide-react";
 import ProductCard from "../components/ProductCard";
+import Layout from "../components/Layout";
 
 function HomePage() {
   const { products = [] } = useAppContext();
@@ -29,6 +30,7 @@ function HomePage() {
   }, [heroImages.length]);
 
   return (
+    <Layout>
     <div className="min-h-screen bg-[#F4EDE4]">
       {/* Hero Section */}
       <section className="relative h-[85vh] w-full overflow-hidden">
@@ -169,6 +171,7 @@ function HomePage() {
         </div>
       </section>
     </div>
+        </Layout>
   );
 }
 
