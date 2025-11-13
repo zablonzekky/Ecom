@@ -8,7 +8,10 @@ function Navbar({ mobileMenuOpen, setMobileMenuOpen }) {
   const [searchOpen, setSearchOpen] = useState(false);
   const navigate = useNavigate();
 
-  const cartItemsCount = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
+  const cartItemsCount = cart.reduce(
+    (sum, item) => sum + (item.quantity || 1),
+    0
+  );
 
   return (
     <header className="fixed top-0 left-0 right-0 bg-[#FDFBF9] shadow-md z-50 border-b border-[#EADBC8] backdrop-blur-sm">
@@ -20,7 +23,7 @@ function Navbar({ mobileMenuOpen, setMobileMenuOpen }) {
             onClick={() => navigate("/")}
           >
             <span className="text-3xl font-semibold text-[#5A3E2B] tracking-tight">
-              StyleHub
+              Ecom
             </span>
           </div>
 
@@ -30,6 +33,7 @@ function Navbar({ mobileMenuOpen, setMobileMenuOpen }) {
               { to: "/", label: "Home" },
               { to: "/shop", label: "Shop" },
               { to: "/men", label: "Men" },
+              { to: "/women", label: "women" },
               { to: "/shoes", label: "Shoes" },
               { to: "/accessories", label: "Accessories" },
             ].map((link) => (
@@ -106,7 +110,11 @@ function Navbar({ mobileMenuOpen, setMobileMenuOpen }) {
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="md:hidden text-[#5A3E2B] p-2 rounded-full hover:text-[#C07A46] transition-colors"
             >
-              {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              {mobileMenuOpen ? (
+                <X className="h-6 w-6" />
+              ) : (
+                <Menu className="h-6 w-6" />
+              )}
             </button>
           </div>
         </div>
@@ -133,7 +141,9 @@ function Navbar({ mobileMenuOpen, setMobileMenuOpen }) {
             {["Home", "Women", "Men", "Shoes", "Accessories"].map((label) => (
               <Link
                 key={label}
-                to={`/${label.toLowerCase() === "home" ? "" : label.toLowerCase()}`}
+                to={`/${
+                  label.toLowerCase() === "home" ? "" : label.toLowerCase()
+                }`}
                 onClick={() => setMobileMenuOpen(false)}
                 className="block text-left py-3 px-4 text-[#5A3E2B] hover:bg-[#F7EFE7] rounded-md font-medium no-underline"
               >
