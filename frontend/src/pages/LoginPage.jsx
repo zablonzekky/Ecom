@@ -1,16 +1,19 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
 import api from "../services/api";
 import toast from "react-hot-toast";
 
 function LoginPage() {
-  const { setUser } = useAppContext();
+  // const { setUser } = useAppContext();
+  const { login } = useAppContext();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from?.pathname || "/";
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -21,15 +24,22 @@ function LoginPage() {
       const response = await api.post("/auth/token/", { username, password });
 
       if (response.access) {
-        const user = { username, token: response.access };
-        setUser(user);
-        localStorage.setItem("user", JSON.stringify(user));
-        localStorage.setItem("token", response.access);
-        
-        // Show success toast with longer duration
-        toast.success(`Welcome back, ${username}! `, {
+        // const user = { username, token: response.access };
+        // setUser(user);
+        // localStorage.setItem("user", JSON.stringify(user));
+        // localStorage.setItem("token", response.access);
+        // Use the login function from context instead of manual user setting
+        const userData = {
+          username,
+          token: response.access,
+          name: username,
+          id: Date.now(),
+        };
+
+        await login(username, password);
+        toast.success(`Login Successfull `, {
           duration: 2500,
-          position: "top-center",
+          position: "top-right",
           style: {
             background: "#169001ff",
             color: "#fff",
@@ -45,7 +55,8 @@ function LoginPage() {
 
         // Navigate after toast is visible
         setTimeout(() => {
-          navigate("/");
+          // navigate("/");
+          navigate(from, { replace: true });
         }, 2000);
       } else {
         const errorMsg = "Invalid credentials";
@@ -63,7 +74,8 @@ function LoginPage() {
         });
       }
     } catch (err) {
-      const errorMsg = err.response?.data?.detail || "Login failed. Please try again.";
+      const errorMsg =
+        err.response?.data?.detail || "Login failed. Please try again.";
       setError(errorMsg);
       toast.error(errorMsg, {
         duration: 4000,

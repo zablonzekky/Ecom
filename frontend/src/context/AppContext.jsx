@@ -1,14 +1,10 @@
-// src/context/AppContext.jsx
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { getDemoProducts, getDemoCategories } from "../Data/data";
+import api from "../services/api";
 
 const AppContext = createContext();
-
 export const useAppContext = () => {
   const context = useContext(AppContext);
-  if (!context) {
-    throw new Error("useAppContext must be used within an AppProvider");
-  }
+  if (!context) throw new Error("useAppContext must be used within an AppProvider");
   return context;
 };
 
@@ -16,63 +12,75 @@ export const AppProvider = ({ children }) => {
   const [cart, setCart] = useState([]);
   const [user, setUser] = useState(null);
   const [selectedProduct, setSelectedProduct] = useState(null);
-  const [products, setProducts] = useState(getDemoProducts());
-  const [categories, setCategories] = useState(getDemoCategories());
+  const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [orders, setOrders] = useState([]);
+  const [currentCategory, setCurrentCategory] = useState(null);
 
-  // Load user from localStorage on mount
+  // ----- FETCH PRODUCTS -----
+  const fetchProductsByCategory = async (categorySlug) => {
+    try {
+      setIsLoading(true);
+      setCurrentCategory(categorySlug);
+      
+      // Backend expects 'category__slug' parameter (Django filter)
+      const data = await api.get(`/products/`, { 
+        category__slug: categorySlug 
+      });
+      
+      console.log(`✅ Fetched ${categorySlug} products:`, data);
+      setProducts(data.results || data);
+    } catch (err) {
+      console.error(`Failed to fetch products for category "${categorySlug}":`, err);
+      setProducts([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fetch all products initially
   useEffect(() => {
-    const savedUser = localStorage.getItem("user");
-    const savedCart = localStorage.getItem("cart");
-    
-    if (savedUser) {
+    const fetchAll = async () => {
       try {
-        setUser(JSON.parse(savedUser));
-      } catch (e) {
-        console.error("Failed to parse user from localStorage");
+        setIsLoading(true);
+        const data = await api.get("/products/");
+        console.log("✅ Fetched all products:", data);
+        setProducts(data.results || data);
+      } catch (err) {
+        console.error("Failed to fetch products:", err);
+        setProducts([]);
+      } finally {
+        setIsLoading(false);
       }
-    }
-    
-    if (savedCart) {
-      try {
-        setCart(JSON.parse(savedCart));
-      } catch (e) {
-        console.error("Failed to parse cart from localStorage");
-      }
-    }
+    };
+    fetchAll();
   }, []);
 
-  // Save cart to localStorage whenever it changes
-  useEffect(() => {
-    localStorage.setItem("cart", JSON.stringify(cart));
-  }, [cart]);
-
+  // ----- CART FUNCTIONS -----
   const addToCart = (product, size, quantity = 1) => {
     const existingItemIndex = cart.findIndex(
       (item) => item.id === product.id && item.selectedSize === size
     );
-
     if (existingItemIndex > -1) {
-      // Update quantity if item already exists
       const updatedCart = [...cart];
       updatedCart[existingItemIndex].quantity += quantity;
       setCart(updatedCart);
     } else {
-      // Add new item
       setCart((prev) => [
         ...prev,
         {
           ...product,
           selectedSize: size,
-          quantity: quantity,
-          cartItemId: Date.now(), // Unique ID for cart item
+          quantity,
+          cartItemId: Date.now(),
         },
       ]);
     }
   };
 
-  const removeFromCart = (cartItemId) => {
+  const removeFromCart = (cartItemId) =>
     setCart((prev) => prev.filter((item) => item.cartItemId !== cartItemId));
-  };
 
   const updateCartItemQuantity = (cartItemId, newQuantity) => {
     if (newQuantity <= 0) {
@@ -81,44 +89,107 @@ export const AppProvider = ({ children }) => {
     }
     setCart((prev) =>
       prev.map((item) =>
-        item.cartItemId === cartItemId
-          ? { ...item, quantity: newQuantity }
-          : item
+        item.cartItemId === cartItemId ? { ...item, quantity: newQuantity } : item
       )
     );
   };
 
-  const clearCart = () => {
-    setCart([]);
-  };
+  const clearCart = () => setCart([]);
 
-  const getCartTotal = () => {
-    return cart.reduce((total, item) => {
+  const getCartTotal = () =>
+    cart.reduce((total, item) => {
       const price = item.current_price || item.price;
       return total + price * item.quantity;
     }, 0);
+
+  const getCartItemsCount = () =>
+    cart.reduce((count, item) => count + item.quantity, 0);
+
+  // ----- ORDER FUNCTIONS -----
+  const placeOrder = (orderData) => {
+    const newOrder = {
+      id: "ORD-" + Date.now(),
+      date: new Date().toISOString().split("T")[0],
+      status: "Processing",
+      items: [...cart],
+      total: getCartTotal() + 200,
+      shippingAddress: { ...orderData.address },
+      phoneNumber: orderData.phoneNumber,
+      orderDate: new Date().toISOString(),
+    };
+    setOrders((prev) => [newOrder, ...prev]);
+    clearCart();
+    return newOrder;
   };
 
-  const getCartItemsCount = () => {
-    return cart.reduce((count, item) => count + item.quantity, 0);
+  const getOrderById = (orderId) => orders.find((order) => order.id === orderId);
+
+  const updateOrderStatus = (orderId, status) => {
+    setOrders((prev) =>
+      prev.map((order) => (order.id === orderId ? { ...order, status } : order))
+    );
   };
 
-  const login = (userData, token) => {
-    setUser(userData);
-    localStorage.setItem("user", JSON.stringify(userData));
-    localStorage.setItem("token", token);
+  // ----- AUTH FUNCTIONS -----
+  const login = async (email, password) => {
+    try {
+      setIsLoading(true);
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      if (!email || !password) throw new Error("Email and password are required");
+      const userData = {
+        id: Date.now(),
+        email,
+        name: email.split("@")[0],
+        username: email.split("@")[0],
+        firstName: email.split("@")[0],
+        lastName: "",
+        createdAt: new Date().toISOString(),
+      };
+      setUser(userData);
+      return { success: true, user: userData };
+    } catch (err) {
+      console.error("Login failed:", err);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const logout = () => {
     setUser(null);
     setCart([]);
-    localStorage.removeItem("user");
-    localStorage.removeItem("token");
-    localStorage.removeItem("cart");
+    setOrders([]);
   };
 
+  const register = async (email, password, name) => {
+    try {
+      setIsLoading(true);
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      if (!email || !password || !name) throw new Error("All fields are required");
+      const [firstName, ...lastNameParts] = name.split(" ");
+      const userData = {
+        id: Date.now(),
+        email,
+        name,
+        username: name.toLowerCase().replace(/\s+/g, ""),
+        firstName,
+        lastName: lastNameParts.join(" "),
+        createdAt: new Date().toISOString(),
+      };
+      setUser(userData);
+      return { success: true, user: userData };
+    } catch (err) {
+      console.error("Registration failed:", err);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const isAuthenticated = () => !!user;
+
+  // ----- CONTEXT VALUE -----
   const contextValue = {
-    // Cart
     cart,
     addToCart,
     removeFromCart,
@@ -126,25 +197,33 @@ export const AppProvider = ({ children }) => {
     clearCart,
     getCartTotal,
     getCartItemsCount,
-    
-    // User
+
+    orders,
+    placeOrder,
+    getOrderById,
+    updateOrderStatus,
+
     user,
     setUser,
     login,
     logout,
-    
-    // Products
+    register,
+    isAuthenticated,
+
     products,
     setProducts,
     selectedProduct,
     setSelectedProduct,
-    
-    // Categories
+
     categories,
     setCategories,
+
+    isLoading,
+    setIsLoading,
+
+    fetchProductsByCategory,
+    currentCategory,
   };
 
-  return (
-    <AppContext.Provider value={contextValue}>{children}</AppContext.Provider>
-  );
+  return <AppContext.Provider value={contextValue}>{children}</AppContext.Provider>;
 };

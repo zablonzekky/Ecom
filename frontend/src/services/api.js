@@ -2,20 +2,28 @@
 
 const API_BASE_URL = "http://localhost:8000/api";
 
+// Helper to build query string from params object
+const buildQueryString = (params) => {
+  if (!params) return "";
+  return (
+    "?" +
+    Object.entries(params)
+      .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+      .join("&")
+  );
+};
+
 const api = {
-  // GET request
-  get: async (endpoint, token = null) => {
+  // GET request with optional query params
+  get: async (endpoint, params = null, token = null) => {
     const headers = { "Content-Type": "application/json" };
     if (token) headers["Authorization"] = `Bearer ${token}`;
 
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, { headers });
+    const queryString = buildQueryString(params);
+    const response = await fetch(`${API_BASE_URL}${endpoint}${queryString}`, { headers });
 
-    // Parse JSON safely
     const data = await response.json().catch(() => ({}));
-
-    // Throw parsed JSON for error handling if response not OK
     if (!response.ok) throw data;
-
     return data;
   },
 
@@ -30,16 +38,12 @@ const api = {
       body: JSON.stringify(payload),
     });
 
-    // Parse JSON safely
     const data = await response.json().catch(() => ({}));
-
-    // Throw parsed JSON for error handling if response not OK
     if (!response.ok) throw data;
-
     return data;
   },
 
-  // Optional: PUT request
+  // PUT request
   put: async (endpoint, payload, token = null) => {
     const headers = { "Content-Type": "application/json" };
     if (token) headers["Authorization"] = `Bearer ${token}`;
@@ -55,7 +59,7 @@ const api = {
     return data;
   },
 
-  // Optional: DELETE request
+  // DELETE request
   delete: async (endpoint, token = null) => {
     const headers = { "Content-Type": "application/json" };
     if (token) headers["Authorization"] = `Bearer ${token}`;

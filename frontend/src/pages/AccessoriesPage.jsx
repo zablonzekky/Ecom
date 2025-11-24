@@ -1,112 +1,115 @@
-import { useAppContext } from "../context/AppContext";
+// ------- src/pages/AccessoriesPage.jsx -------
 import React, { useEffect, useState } from "react";
+import { useAppContext } from "../context/AppContext";
 import ProductCard from "../components/ProductCard";
+import { Search, Grid, List } from "lucide-react";
 
 function AccessoriesPage() {
-  const { products } = useAppContext();
-  const [accessoryImages, setAccessoryImages] = useState({});
+  const { products, isLoading, fetchProductsByCategory } = useAppContext();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [viewMode, setViewMode] = useState("grid");
+  const [sortBy, setSortBy] = useState("featured");
 
-  // Fetch images from Unsplash API
   useEffect(() => {
-    const fetchAccessoryImages = async () => {
-      const imageMap = {};
-      const searchTerms = {
-        watch: "luxury watch",
-        sunglasses: "designer sunglasses",
-        jewelry: "fashion jewelry",
-        belt: "leather belt",
-        bag: "designer handbag",
-      };
-
-      try {
-        for (const [type, query] of Object.entries(searchTerms)) {
-          const res = await fetch(
-            `https://api.unsplash.com/search/photos?page=1&query=${query}&client_id=YOUR_UNSPLASH_ACCESS_KEY&per_page=10`
-          );
-          const data = await res.json();
-
-          if (data.results && data.results.length > 0) {
-            imageMap[type] = data.results.map((photo) => ({
-              url: photo.urls.regular,
-              alt: photo.alt_description || `${type} image`,
-              photographer: photo.user.name,
-            }));
-          }
-        }
-        setAccessoryImages(imageMap);
-      } catch (err) {
-        console.error("Error fetching accessory images:", err);
-      }
-    };
-
-    fetchAccessoryImages();
+    fetchProductsByCategory("Accessories");
   }, []);
 
-  // Select only accessory-type products
-  const accessoryProducts = products.filter((product) =>
-    ["watch", "sunglasses", "jewelry", "belt", "bag"].includes(
-      product.product_type?.toLowerCase()
-    )
-  );
+  const filteredProducts = products
+    .filter((p) => {
+      const term = searchTerm.toLowerCase();
+      const title = p?.title?.toLowerCase() || "";
+      const brand = p?.brand?.toLowerCase() || "";
+      const type = p?.product_type?.toLowerCase() || "";
+      return title.includes(term) || brand.includes(term) || type.includes(term);
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case "price-low":
+          return (a.current_price || a.price) - (b.current_price || b.price);
+        case "price-high":
+          return (b.current_price || b.price) - (a.current_price || a.price);
+        case "rating":
+          return (b.rating || 0) - (a.rating || 0);
+        case "name":
+          return a.title.localeCompare(b.title);
+        default:
+          return 0;
+      }
+    });
 
-  // Attach Unsplash images dynamically
-  const enhancedProducts = accessoryProducts.map((product) => {
-    const type = product.product_type?.toLowerCase();
-    const images = accessoryImages[type];
-
-    return {
-      ...product,
-      image:
-        images && images.length > 0
-          ? images[Math.floor(Math.random() * images.length)].url
-          : product.image,
-      imageAlt: images
-        ? `Premium ${type} from our accessories collection`
-        : product.title,
-    };
-  });
+  if (isLoading) return <p className="text-center py-16">Loading products...</p>;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      {/* Header */}
-      <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">
-          Premium Accessories
-        </h1>
-        <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-          Discover timeless pieces that complement your style — from luxury
-          watches to elegant jewelry and everyday essentials.
-        </p>
-      </div>
+    <div className="max-w-7xl mx-auto px-4 py-8">
+      <h1 className="text-4xl font-bold mb-6">Accessories</h1>
 
-      {/* Products Section */}
-      <div className="mb-6 text-gray-600 text-lg">
-        Showing {enhancedProducts.length} accessories
-      </div>
+      {/* Search + Sort + View */}
+      <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
+        <div className="relative w-full md:w-96">
+          <Search 
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" 
+            size={20} 
+          />
+          <input
+            type="text"
+            placeholder="Search by name, brand or type..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
 
-      {/* Conditional Rendering */}
-      {Object.keys(accessoryImages).length === 0 &&
-        enhancedProducts.length > 0 && (
-          <div className="text-sm text-blue-600 mb-6 animate-pulse">
-            Fetching premium accessory images...
+        <div className="flex items-center gap-4">
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="featured">Featured</option>
+            <option value="price-low">Price: Low to High</option>
+            <option value="price-high">Price: High to Low</option>
+            <option value="rating">Top Rated</option>
+            <option value="name">Name A–Z</option>
+          </select>
+
+          <div className="flex border border-gray-300 rounded-lg overflow-hidden">
+            <button
+              onClick={() => setViewMode("grid")}
+              className={`p-3 ${
+                viewMode === "grid" ? "bg-blue-600 text-white" : "bg-white text-gray-600"
+              }`}
+            >
+              <Grid size={18} />
+            </button>
+            <button
+              onClick={() => setViewMode("list")}
+              className={`p-3 ${
+                viewMode === "list" ? "bg-blue-600 text-white" : "bg-white text-gray-600"
+              }`}
+            >
+              <List size={18} />
+            </button>
           </div>
-        )}
+        </div>
+      </div>
 
-      {enhancedProducts.length === 0 ? (
-        <div className="text-center py-20">
-          <div className="text-gray-400 text-6xl mb-4">👜</div>
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">
-            No accessories available
-          </h3>
-          <p className="text-gray-600">
-            Please check back later for new arrivals.
-          </p>
+      {filteredProducts.length > 0 ? (
+        <div
+          className={
+            viewMode === "grid"
+              ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
+              : "space-y-6"
+          }
+        >
+          {filteredProducts.map((p) => (
+            <ProductCard key={p.id} product={p} viewMode={viewMode} />
+          ))}
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-          {enhancedProducts.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
+        <div className="text-center py-16 text-gray-600">
+          <p className="text-5xl mb-4">✨</p>
+          <h3 className="text-xl font-semibold">No products found</h3>
+          <p>Try adjusting your search terms.</p>
         </div>
       )}
     </div>

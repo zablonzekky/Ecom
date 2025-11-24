@@ -17,7 +17,7 @@ import {
 function ProductPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { products, addToCart } = useAppContext();
+  const { products, addToCart,user } = useAppContext();
 
   const [selectedImage, setSelectedImage] = useState(0);
   const [selectedSize, setSelectedSize] = useState("");
@@ -26,6 +26,7 @@ function ProductPage() {
   const [isWishlisted, setIsWishlisted] = useState(false);
 
   // Find product by ID
+  
   const product = products.find((p) => p.id === parseInt(id));
 
   useEffect(() => {
@@ -53,6 +54,10 @@ function ProductPage() {
   }
 
   const handleAddToCart = () => {
+    if (!user) {
+    navigate("/login"); // redirect to login
+    return;
+  }
     if (!selectedSize && product.sizes && product.sizes.length > 0) {
       alert("Please select a size");
       return;

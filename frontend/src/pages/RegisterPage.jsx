@@ -1,14 +1,16 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
 import Layout from "../components/Layout";
 import api from "../services/api";
 import toast from "react-hot-toast";
 
 function RegisterPage() {
-  const { setCurrentPage } = useAppContext();
+  // const { setCurrentPage } = useAppContext();
+  const { register } = useAppContext();
   const navigate = useNavigate();
-
+  const location = useLocation();
+  const from = location.state?.from?.pathname || "/";
   const [formData, setFormData] = useState({
     username: "",
     email: "",
@@ -40,7 +42,11 @@ function RegisterPage() {
     if (!formData.lastName.trim()) errs.lastName = "Last name is required";
     if (!formData.password) errs.password = "Password is required";
     if (!formData.password2) errs.password2 = "Please confirm your password";
-    if (formData.password && formData.password2 && formData.password !== formData.password2)
+    if (
+      formData.password &&
+      formData.password2 &&
+      formData.password !== formData.password2
+    )
       errs.password2 = "Passwords do not match";
     if (formData.password && formData.password.length < 8)
       errs.password = "Password must be at least 8 characters";
@@ -73,11 +79,34 @@ function RegisterPage() {
         last_name: formData.lastName,
       });
 
+      // if (response.user) {
+      //   // Show success toast with longer duration
+      //   toast.success("Account created successfully", {
+      //     duration: 2500,
+      //     position: "top-right",
+      //     style: {
+      //       background: "#169001ff",
+      //       color: "#fff",
+      //       padding: "16px",
+      //       fontSize: "15px",
+      //       fontWeight: "500",
+      //     },
+      //     iconTheme: {
+      //       primary: "#fff",
+      //       secondary: "#10b981",
+      //     },
+      //   });
+
+      //   // Redirect to login after toast is visible
+      //   setTimeout(() => {
+      //     navigate("/login");
+      //   }, 2000);
+      // }
       if (response.user) {
         // Show success toast with longer duration
-        toast.success("🎉 Account created successfully! Redirecting to login...", {
+        toast.success("Account created successfully! Please log in.", {
           duration: 2500,
-          position: "top-center",
+          position: "top-right",
           style: {
             background: "#169001ff",
             color: "#fff",
@@ -91,9 +120,9 @@ function RegisterPage() {
           },
         });
 
-        // Redirect to login after toast is visible
+        // Redirect to login page after registration
         setTimeout(() => {
-          navigate("/login");
+          navigate("/login", { state: { from: location.state?.from } });
         }, 2000);
       } else {
         setError(response.error || "Registration failed");
@@ -107,19 +136,24 @@ function RegisterPage() {
         const data = err.response.data;
         const fieldErrs = {};
 
-        ["username", "email", "password", "password2", "first_name", "last_name"].forEach(
-          (field) => {
-            if (data[field]) {
-              fieldErrs[
-                field === "first_name"
-                  ? "firstName"
-                  : field === "last_name"
-                  ? "lastName"
-                  : field
-              ] = data[field][0];
-            }
+        [
+          "username",
+          "email",
+          "password",
+          "password2",
+          "first_name",
+          "last_name",
+        ].forEach((field) => {
+          if (data[field]) {
+            fieldErrs[
+              field === "first_name"
+                ? "firstName"
+                : field === "last_name"
+                ? "lastName"
+                : field
+            ] = data[field][0];
           }
-        );
+        });
 
         if (Object.keys(fieldErrs).length > 0) {
           setFieldErrors(fieldErrs);
@@ -180,7 +214,11 @@ function RegisterPage() {
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
+            <form
+              onSubmit={handleSubmit}
+              className="flex flex-col gap-4"
+              noValidate
+            >
               {/* Username & Email */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <label className="flex flex-col">
@@ -194,7 +232,9 @@ function RegisterPage() {
                     placeholder="Enter username"
                   />
                   {fieldErrors.username && (
-                    <span className="mt-1 text-xs text-red-600">{fieldErrors.username}</span>
+                    <span className="mt-1 text-xs text-red-600">
+                      {fieldErrors.username}
+                    </span>
                   )}
                 </label>
 
@@ -209,7 +249,9 @@ function RegisterPage() {
                     placeholder="Enter email"
                   />
                   {fieldErrors.email && (
-                    <span className="mt-1 text-xs text-red-600">{fieldErrors.email}</span>
+                    <span className="mt-1 text-xs text-red-600">
+                      {fieldErrors.email}
+                    </span>
                   )}
                 </label>
               </div>
@@ -226,7 +268,9 @@ function RegisterPage() {
                     placeholder="Enter first name"
                   />
                   {fieldErrors.firstName && (
-                    <span className="mt-1 text-xs text-red-600">{fieldErrors.firstName}</span>
+                    <span className="mt-1 text-xs text-red-600">
+                      {fieldErrors.firstName}
+                    </span>
                   )}
                 </label>
 
@@ -240,7 +284,9 @@ function RegisterPage() {
                     placeholder="Enter last name"
                   />
                   {fieldErrors.lastName && (
-                    <span className="mt-1 text-xs text-red-600">{fieldErrors.lastName}</span>
+                    <span className="mt-1 text-xs text-red-600">
+                      {fieldErrors.lastName}
+                    </span>
                   )}
                 </label>
               </div>
@@ -257,12 +303,16 @@ function RegisterPage() {
                     placeholder="At least 8 characters"
                   />
                   {fieldErrors.password && (
-                    <span className="mt-1 text-xs text-red-600">{fieldErrors.password}</span>
+                    <span className="mt-1 text-xs text-red-600">
+                      {fieldErrors.password}
+                    </span>
                   )}
                 </label>
 
                 <label className="flex flex-col">
-                  <span className="text-xs text-gray-700 mb-2">Confirm Password</span>
+                  <span className="text-xs text-gray-700 mb-2">
+                    Confirm Password
+                  </span>
                   <input
                     type="password"
                     value={formData.password2}
@@ -271,7 +321,9 @@ function RegisterPage() {
                     placeholder="Re-enter password"
                   />
                   {fieldErrors.password2 && (
-                    <span className="mt-1 text-xs text-red-600">{fieldErrors.password2}</span>
+                    <span className="mt-1 text-xs text-red-600">
+                      {fieldErrors.password2}
+                    </span>
                   )}
                 </label>
               </div>

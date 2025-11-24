@@ -1,9 +1,11 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
 
 // Checkout Page
 function CheckoutPage() {
-  const { cart, user, setCurrentPage } = useAppContext();
+  const { cart, user, clearCart, placeOrder } = useAppContext(); 
+  const navigate = useNavigate();
   const [phoneNumber, setPhoneNumber] = useState('');
   const [address, setAddress] = useState({
     fullName: '',
@@ -25,16 +27,22 @@ function CheckoutPage() {
     e.preventDefault();
     if (!user) {
       alert('Please login to continue');
-      setCurrentPage('login');
+      navigate('/login', { state: { from: '/checkout' } });
+      return;
+    }
+
+    if (cart.length === 0) {
+      alert('Your cart is empty');
       return;
     }
 
     setProcessing(true);
     // Simulate payment processing
     setTimeout(() => {
-      alert('Order placed successfully! You will receive an M-PESA prompt shortly.');
+      const order = placeOrder({ address, phoneNumber }); // Now placeOrder is defined
+      alert(`Order #${order.id} placed successfully! You will receive an M-PESA prompt shortly.`);
       setProcessing(false);
-      setCurrentPage('home');
+      navigate('/orders'); // Navigate to profile to see the order
     }, 2000);
   };
 
@@ -109,8 +117,8 @@ function CheckoutPage() {
                 {cart.map((item) => {
                   const price = item.current_price || item.price;
                   return (
-                    <div key={`${item.id}-${item.size}`} className="flex justify-between text-sm">
-                      <span>{item.name} (Size: {item.size}) x{item.quantity}</span>
+                    <div key={`${item.id}-${item.selectedSize}`} className="flex justify-between text-sm">
+                      <span>{item.name} (Size: {item.selectedSize}) x{item.quantity}</span>
                       <span>KES {(price * item.quantity).toLocaleString()}</span>
                     </div>
                   );
@@ -132,7 +140,7 @@ function CheckoutPage() {
               </div>
               <button
                 type="submit"
-                disabled={processing}
+                disabled={processing || cart.length === 0}
                 className="w-full mt-6 bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
               >
                 {processing ? 'Processing...' : 'Place Order & Pay with M-PESA'}
@@ -144,4 +152,5 @@ function CheckoutPage() {
     </div>
   );
 }
+
 export default CheckoutPage;

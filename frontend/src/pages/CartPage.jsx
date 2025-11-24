@@ -6,7 +6,10 @@ import { Trash2, Plus, Minus, ShoppingBag, ArrowLeft } from "lucide-react";
 
 function CartPage() {
   const navigate = useNavigate();
-  const { cart, updateCartItemQuantity, removeFromCart, getCartTotal } = useAppContext();
+  const { user } = useAppContext();
+
+  const { cart, updateCartItemQuantity, removeFromCart, getCartTotal } =
+    useAppContext();
 
   const handleQuantityChange = (cartItemId, newQuantity) => {
     if (newQuantity < 1) return;
@@ -22,13 +25,19 @@ function CartPage() {
   const cartTotal = getCartTotal();
   const shippingCost = cartTotal > 5000 ? 0 : 300;
   const totalWithShipping = cartTotal + shippingCost;
+  if (!user) {
+    navigate("/login");
+    return null; // or a loading spinner while redirecting
+  }
 
   if (cart.length === 0) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center max-w-md px-4">
           <ShoppingBag className="h-24 w-24 mx-auto text-gray-400 mb-6" />
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">Your Cart is Empty</h2>
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">
+            Your Cart is Empty
+          </h2>
           <p className="text-gray-600 mb-8">
             Looks like you haven't added any items to your cart yet.
           </p>
@@ -56,8 +65,12 @@ function CartPage() {
             <ArrowLeft className="h-5 w-5 mr-2" />
             Continue Shopping
           </button>
-          <h1 className="text-4xl font-extrabold text-gray-900">Shopping Cart</h1>
-          <p className="text-gray-600 mt-2">{cart.length} {cart.length === 1 ? 'item' : 'items'} in your cart</p>
+          <h1 className="text-4xl font-extrabold text-gray-900">
+            Shopping Cart
+          </h1>
+          <p className="text-gray-600 mt-2">
+            {cart.length} {cart.length === 1 ? "item" : "items"} in your cart
+          </p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -95,7 +108,10 @@ function CartPage() {
                           {item.name}
                         </h3>
                         <p className="text-sm text-gray-600 mb-2">
-                          Size: <span className="font-semibold">{item.selectedSize}</span>
+                          Size:{" "}
+                          <span className="font-semibold">
+                            {item.selectedSize}
+                          </span>
                         </p>
                         <p className="text-sm text-gray-600">
                           Category: {item.category_name}
@@ -114,7 +130,12 @@ function CartPage() {
                     <div className="flex items-center justify-between mt-4">
                       <div className="flex items-center gap-3 bg-gray-100 rounded-lg p-1">
                         <button
-                          onClick={() => handleQuantityChange(item.cartItemId, item.quantity - 1)}
+                          onClick={() =>
+                            handleQuantityChange(
+                              item.cartItemId,
+                              item.quantity - 1
+                            )
+                          }
                           className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white transition"
                         >
                           <Minus className="h-4 w-4" />
@@ -123,7 +144,12 @@ function CartPage() {
                           {item.quantity}
                         </span>
                         <button
-                          onClick={() => handleQuantityChange(item.cartItemId, item.quantity + 1)}
+                          onClick={() =>
+                            handleQuantityChange(
+                              item.cartItemId,
+                              item.quantity + 1
+                            )
+                          }
                           className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white transition"
                         >
                           <Plus className="h-4 w-4" />
@@ -148,12 +174,16 @@ function CartPage() {
           {/* Order Summary */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 sticky top-24">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Order Summary</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">
+                Order Summary
+              </h2>
 
               <div className="space-y-4 mb-6">
                 <div className="flex justify-between text-gray-700">
                   <span>Subtotal</span>
-                  <span className="font-semibold">KES {cartTotal.toLocaleString()}</span>
+                  <span className="font-semibold">
+                    KES {cartTotal.toLocaleString()}
+                  </span>
                 </div>
 
                 <div className="flex justify-between text-gray-700">
@@ -170,7 +200,11 @@ function CartPage() {
                 {cartTotal < 5000 && (
                   <div className="bg-blue-50 p-3 rounded-lg">
                     <p className="text-sm text-blue-800">
-                      Add <span className="font-bold">KES {(5000 - cartTotal).toLocaleString()}</span> more for free shipping!
+                      Add{" "}
+                      <span className="font-bold">
+                        KES {(5000 - cartTotal).toLocaleString()}
+                      </span>{" "}
+                      more for free shipping!
                     </p>
                   </div>
                 )}
@@ -200,20 +234,50 @@ function CartPage() {
               {/* Trust Badges */}
               <div className="mt-6 pt-6 border-t space-y-3">
                 <div className="flex items-center gap-3 text-sm text-gray-600">
-                  <svg className="h-5 w-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <svg
+                    className="h-5 w-5 text-green-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
                   </svg>
                   <span>Secure checkout</span>
                 </div>
                 <div className="flex items-center gap-3 text-sm text-gray-600">
-                  <svg className="h-5 w-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <svg
+                    className="h-5 w-5 text-green-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
                   </svg>
                   <span>30-day returns</span>
                 </div>
                 <div className="flex items-center gap-3 text-sm text-gray-600">
-                  <svg className="h-5 w-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <svg
+                    className="h-5 w-5 text-green-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
                   </svg>
                   <span>M-PESA payments</span>
                 </div>
