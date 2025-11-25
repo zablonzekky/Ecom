@@ -7,7 +7,6 @@ import { Trash2, Plus, Minus, ShoppingBag, ArrowLeft } from "lucide-react";
 function CartPage() {
   const navigate = useNavigate();
   const { user } = useAppContext();
-
   const { cart, updateCartItemQuantity, removeFromCart, getCartTotal } =
     useAppContext();
 
@@ -22,14 +21,19 @@ function CartPage() {
     }
   };
 
+  const handleCheckout = () => {
+    if (!user) {
+      navigate("/login");
+      return;
+    }
+    navigate("/checkout");
+  };
+
   const cartTotal = getCartTotal();
   const shippingCost = cartTotal > 5000 ? 0 : 300;
   const totalWithShipping = cartTotal + shippingCost;
-  if (!user) {
-    navigate("/login");
-    return null; // or a loading spinner while redirecting
-  }
 
+  // Empty cart view
   if (cart.length === 0) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -53,9 +57,10 @@ function CartPage() {
     );
   }
 
+  // Cart with items
   return (
     <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="w-full px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
           <button
@@ -218,10 +223,10 @@ function CartPage() {
               </div>
 
               <button
-                onClick={() => navigate("/checkout")}
+                onClick={handleCheckout}
                 className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-4 rounded-xl font-bold text-lg hover:from-blue-700 hover:to-purple-700 transition shadow-lg hover:shadow-xl mb-3"
               >
-                Proceed to Checkout
+                {user ? "Proceed to Checkout" : "Login to Checkout"}
               </button>
 
               <button

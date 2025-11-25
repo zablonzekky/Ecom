@@ -3,54 +3,32 @@ import { useAppContext } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
 
 function OrdersPage() {
-  const { orders } = useAppContext();
+  const { orders = [] } = useAppContext(); // default to empty array
   const navigate = useNavigate();
   const [filterStatus, setFilterStatus] = useState('all');
 
-  // Status configuration with colors and icons
   const statusConfig = {
-    'Pending': {
-      color: 'bg-gray-100 text-gray-800 border-gray-300',
-      icon: '⏳',
-      progress: 0
-    },
-    'Processing': {
-      color: 'bg-amber-100 text-amber-800 border-amber-300',
-      icon: '🔄',
-      progress: 25
-    },
-    'Shipped': {
-      color: 'bg-blue-100 text-blue-800 border-blue-300',
-      icon: '🚚',
-      progress: 75
-    },
-    'Delivered': {
-      color: 'bg-green-100 text-green-800 border-green-300',
-      icon: '✅',
-      progress: 100
-    },
-    'Cancelled': {
-      color: 'bg-red-100 text-red-800 border-red-300',
-      icon: '❌',
-      progress: 0
-    }
+    'Pending': { color: 'bg-gray-100 text-gray-800 border-gray-300', icon: '⏳', progress: 0 },
+    'Processing': { color: 'bg-amber-100 text-amber-800 border-amber-300', icon: '🔄', progress: 25 },
+    'Shipped': { color: 'bg-blue-100 text-blue-800 border-blue-300', icon: '🚚', progress: 75 },
+    'Delivered': { color: 'bg-green-100 text-green-800 border-green-300', icon: '✅', progress: 100 },
+    'Cancelled': { color: 'bg-red-100 text-red-800 border-red-300', icon: '❌', progress: 0 }
   };
 
-  // Filter orders based on selected status
   const filteredOrders = filterStatus === 'all' 
     ? orders 
     : orders.filter(order => order.status === filterStatus);
 
   const getStatusBadge = (status) => (
-    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${statusConfig[status]?.color}`}>
-      <span className="mr-1">{statusConfig[status]?.icon}</span>
-      {status}
+    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${statusConfig[status]?.color || ''}`}>
+      <span className="mr-1">{statusConfig[status]?.icon || ''}</span>
+      {status || 'Unknown'}
     </span>
   );
 
   const getProgressBar = (status) => (
     <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
-      <div 
+      <div
         className="h-2 rounded-full transition-all duration-500 ease-in-out"
         style={{ 
           width: `${statusConfig[status]?.progress || 0}%`,
@@ -65,18 +43,16 @@ function OrdersPage() {
   if (orders.length === 0) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-8">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <div className="mx-auto h-24 w-24 text-gray-400 mb-4">📦</div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">No Orders Yet</h2>
-            <p className="text-gray-600 mb-6">Start shopping to see your orders here</p>
-            <button 
-              onClick={() => navigate('/shop')}
-              className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-transform"
-            >
-              Start Shopping
-            </button>
-          </div>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <div className="mx-auto h-24 w-24 text-gray-400 mb-4">📦</div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">No Orders Yet</h2>
+          <p className="text-gray-600 mb-6">Start shopping to see your orders here</p>
+          <button 
+            onClick={() => navigate('/shop')}
+            className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-transform"
+          >
+            Start Shopping
+          </button>
         </div>
       </div>
     );
@@ -133,10 +109,7 @@ function OrdersPage() {
                       <h3 className="text-lg font-bold text-gray-900">Order #{order.id}</h3>
                       <p className="text-sm text-gray-600">
                         Placed on {new Date(order.date).toLocaleDateString('en-US', { 
-                          weekday: 'long', 
-                          year: 'numeric', 
-                          month: 'long', 
-                          day: 'numeric' 
+                          weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
                         })}
                       </p>
                     </div>
@@ -164,7 +137,7 @@ function OrdersPage() {
                   <div>
                     <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-4">Items</h4>
                     <div className="space-y-3">
-                      {order.items.map((item, index) => (
+                      {order.items?.map((item, index) => (
                         <div key={index} className="flex items-center space-x-4 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                           <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-blue-100 to-purple-100 rounded-lg flex items-center justify-center">
                             <span className="text-lg">👕</span>
@@ -182,7 +155,7 @@ function OrdersPage() {
                             </p>
                           </div>
                         </div>
-                      ))}
+                      )) || <p className="text-gray-500">No items</p>}
                     </div>
                   </div>
 
@@ -192,12 +165,12 @@ function OrdersPage() {
                     <div>
                       <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-3">Shipping Address</h4>
                       <div className="bg-gray-50 p-4 rounded-lg">
-                        <p className="font-medium text-gray-900">{order.shippingAddress.fullName}</p>
-                        <p className="text-gray-600">{order.shippingAddress.addressLine1}</p>
+                        <p className="font-medium text-gray-900">{order.shippingAddress?.fullName || 'N/A'}</p>
+                        <p className="text-gray-600">{order.shippingAddress?.addressLine1 || ''}</p>
                         <p className="text-gray-600">
-                          {order.shippingAddress.city}, {order.shippingAddress.county}
+                          {order.shippingAddress?.city || ''}, {order.shippingAddress?.county || ''}
                         </p>
-                        {order.shippingAddress.phone && (
+                        {order.shippingAddress?.phone && (
                           <p className="text-gray-600 mt-1">📞 {order.shippingAddress.phone}</p>
                         )}
                       </div>
@@ -207,7 +180,7 @@ function OrdersPage() {
                     <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg">
                       <div className="flex justify-between items-center mb-2">
                         <span className="text-gray-600">Subtotal</span>
-                        <span className="text-gray-900">KES {order.subtotal?.toLocaleString() || order.total.toLocaleString()}</span>
+                        <span className="text-gray-900">KES {order.subtotal?.toLocaleString() || order.total?.toLocaleString() || '0'}</span>
                       </div>
                       {order.shipping && (
                         <div className="flex justify-between items-center mb-2">
@@ -223,7 +196,7 @@ function OrdersPage() {
                       )}
                       <div className="flex justify-between items-center pt-2 border-t border-gray-200">
                         <span className="font-semibold text-gray-900">Total Amount</span>
-                        <span className="text-xl font-bold text-gray-900">KES {order.total.toLocaleString()}</span>
+                        <span className="text-xl font-bold text-gray-900">KES {order.total?.toLocaleString() || '0'}</span>
                       </div>
                     </div>
                   </div>

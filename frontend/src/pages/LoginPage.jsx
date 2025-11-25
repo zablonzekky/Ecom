@@ -5,7 +5,6 @@ import api from "../services/api";
 import toast from "react-hot-toast";
 
 function LoginPage() {
-  // const { setUser } = useAppContext();
   const { login } = useAppContext();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -21,27 +20,47 @@ function LoginPage() {
     setError("");
 
     try {
-      const response = await api.post("/auth/token/", { username, password });
+      // Make direct API call to get tokens
+      const response = await fetch('http://localhost:8000/api/auth/token/', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ username, password })
+      });
 
-      if (response.access) {
-        // const user = { username, token: response.access };
-        // setUser(user);
-        // localStorage.setItem("user", JSON.stringify(user));
-        // localStorage.setItem("token", response.access);
-        // Use the login function from context instead of manual user setting
+      const data = await response.json();
+
+      if (response.ok) {
+        // Store both tokens in localStorage
+        localStorage.setItem('access_token', data.access);
+        localStorage.setItem('refresh_token', data.refresh);
+        
+        // Also store in sessionStorage for immediate access if needed
+        sessionStorage.setItem('access_token', data.access);
+        
+        console.log('Tokens stored:', {
+          access: data.access ? 'Yes' : 'No',
+          refresh: data.refresh ? 'Yes' : 'No'
+        });
+
+        // Create user data object
         const userData = {
           username,
-          token: response.access,
+          token: data.access,
+          refreshToken: data.refresh,
           name: username,
           id: Date.now(),
         };
 
+        // Call your context login function
         await login(username, password);
-        toast.success(`Login Successfull `, {
+        
+        toast.success(`Login Successful`, {
           duration: 2500,
           position: "top-right",
           style: {
-            background: "#169001ff",
+            background: "#10b981",
             color: "#fff",
             padding: "16px",
             fontSize: "15px",
@@ -55,11 +74,10 @@ function LoginPage() {
 
         // Navigate after toast is visible
         setTimeout(() => {
-          // navigate("/");
           navigate(from, { replace: true });
         }, 2000);
       } else {
-        const errorMsg = "Invalid credentials";
+        const errorMsg = data.detail || "Invalid credentials";
         setError(errorMsg);
         toast.error(errorMsg, {
           duration: 4000,
@@ -74,8 +92,7 @@ function LoginPage() {
         });
       }
     } catch (err) {
-      const errorMsg =
-        err.response?.data?.detail || "Login failed. Please try again.";
+      const errorMsg = err.response?.data?.detail || "Login failed. Please try again.";
       setError(errorMsg);
       toast.error(errorMsg, {
         duration: 4000,

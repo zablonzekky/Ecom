@@ -17,8 +17,11 @@ import AccessoriesPage from "./pages/AccessoriesPage";
 import ShoesPage from "./pages/ShoesPage";
 import ProfilePage from "./pages/ProfilePage";
 import OrderPage from "./pages/OrdersPage";
+import AboutPage from "./constants/AboutPage" ;
+import ContagePage from "./pages/ContactPage";
 import MenPage from "./pages/MenPage";
 import WomenPage from "./pages/WomenPage";
+import FaqsPage from "./constants/FaqsPage";
 
 export default function App() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -41,23 +44,19 @@ export default function App() {
               <Route path="/product/:id" element={<ProductPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
-              <Route path="/accessories" element={<AccessoriesPage />} />
-              <Route path="/shoes" element={<ShoesPage />} />
-              <Route path="/orders" element={<OrderPage />} />
               <Route path="/men" element={<MenPage />} />
               <Route path="/women" element={<WomenPage />} />
               <Route path="/accessories" element={<AccessoriesPage />} />
               <Route path="/shoes" element={<ShoesPage />} />
 
-              {/* Protected Routes */}
-              <Route
-                path="/cart"
-                element={
-                  <ProtectedRoute>
-                    <CartPage />
-                  </ProtectedRoute>
-                }
-              />
+              {/* PUBLIC Routes - Anyone can view */}
+              <Route path="/cart" element={<CartPage />} />
+              <Route path="/orders" element={<OrderPage />} />
+              <Route path="/contact" element={<ContagePage />} />
+              <Route path="/about" element={<AboutPage />} />
+              <Route path="/FAQs" element={<FaqsPage />} />
+
+              {/* Protected Routes - Login Required */}
               <Route
                 path="/checkout"
                 element={

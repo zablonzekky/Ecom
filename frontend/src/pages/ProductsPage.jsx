@@ -17,17 +17,17 @@ import {
 function ProductPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { products, addToCart,user } = useAppContext();
+  const { products, addToCart, user } = useAppContext();
 
   const [selectedImage, setSelectedImage] = useState(0);
   const [selectedSize, setSelectedSize] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState("description");
   const [isWishlisted, setIsWishlisted] = useState(false);
+  const [showAddedNotif, setShowAddedNotif] = useState(false);
 
-  // Find product by ID
-  
-  const product = products.find((p) => p.id === parseInt(id));
+  // Find product by slug
+  const product = products.find((p) => p.slug === id);
 
   useEffect(() => {
     if (!product) {
@@ -53,22 +53,6 @@ function ProductPage() {
     );
   }
 
-  const handleAddToCart = () => {
-    if (!user) {
-    navigate("/login"); // redirect to login
-    return;
-  }
-    if (!selectedSize && product.sizes && product.sizes.length > 0) {
-      alert("Please select a size");
-      return;
-    }
-
-    const sizeToAdd =
-      product.sizes && product.sizes.length > 0 ? selectedSize : "Standard";
-    addToCart(product, sizeToAdd, quantity);
-    alert("Added to cart successfully!");
-  };
-
   const handleBuyNow = () => {
     if (!selectedSize && product.sizes && product.sizes.length > 0) {
       alert("Please select a size");
@@ -78,7 +62,13 @@ function ProductPage() {
     const sizeToAdd =
       product.sizes && product.sizes.length > 0 ? selectedSize : "Standard";
     addToCart(product, sizeToAdd, quantity);
-    navigate("/cart");
+    
+    // Show notification
+    setShowAddedNotif(true);
+    setTimeout(() => {
+      setShowAddedNotif(false);
+      navigate("/cart");
+    }, 1500);
   };
 
   const nextImage = () => {
@@ -319,20 +309,24 @@ function ProductPage() {
               </div>
             </div>
 
-            {/* Add to Cart Buttons */}
-            <div className="space-y-3">
-              <button
-                onClick={handleAddToCart}
-                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-4 rounded-xl font-bold text-lg hover:from-blue-700 hover:to-purple-700 transition shadow-lg hover:shadow-xl"
-              >
-                Add to Cart
-              </button>
+            {/* Buy Now Button */}
+            <div className="relative">
               <button
                 onClick={handleBuyNow}
-                className="w-full bg-gray-900 text-white py-4 rounded-xl font-bold text-lg hover:bg-gray-800 transition"
+                disabled={product.stock === 0}
+                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:from-gray-400 disabled:to-gray-400 text-white py-4 rounded-xl font-bold text-lg transition shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
               >
-                Buy Now
+                🛒 Buy Now
               </button>
+
+              {/* Added to Cart Notification */}
+              {showAddedNotif && (
+                <div className="absolute inset-0 bg-green-500/90 rounded-xl flex items-center justify-center">
+                  <div className="text-white font-bold text-lg flex items-center gap-2">
+                    <Check className="h-6 w-6" /> Added to cart!
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Trust Badges */}

@@ -1,7 +1,3 @@
-from django.shortcuts import render
-
-# Create your views here.
-# orders/views.py
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -10,7 +6,7 @@ from django.db import transaction
 from django.utils.crypto import get_random_string
 from .models import Address, Order, OrderItem
 from .serializers import AddressSerializer, OrderSerializer, CreateOrderSerializer
-from products.models import Product, Size
+from products.models import Product
 
 
 class AddressViewSet(viewsets.ModelViewSet):
@@ -43,7 +39,7 @@ class OrderViewSet(viewsets.ModelViewSet):
     
     @transaction.atomic
     def create(self, request):
-        """Create a new order"""
+        """Create a new order without sizes"""
         serializer = CreateOrderSerializer(data=request.data)
         
         if not serializer.is_valid():
@@ -64,12 +60,11 @@ class OrderViewSet(viewsets.ModelViewSet):
         for item_data in data['items']:
             try:
                 product = Product.objects.get(id=item_data['product_id'], is_active=True)
-                size = Size.objects.get(product=product, value=item_data['size'])
                 
-                # Check stock
-                if size.stock < item_data['quantity']:
+                # Optional stock check if Product has a stock field
+                if hasattr(product, 'stock') and product.stock < item_data['quantity']:
                     return Response(
-                        {'error': f'Insufficient stock for {product.name} size {size.value}'},
+                        {'error': f'Insufficient stock for {product.name}'},
                         status=status.HTTP_400_BAD_REQUEST
                     )
                 
@@ -79,13 +74,12 @@ class OrderViewSet(viewsets.ModelViewSet):
                 
                 order_items.append({
                     'product': product,
-                    'size': size.value,
                     'quantity': item_data['quantity'],
                     'price': item_price
                 })
                 
-            except (Product.DoesNotExist, Size.DoesNotExist):
-                return Response({'error': 'Invalid product or size'}, status=status.HTTP_400_BAD_REQUEST)
+            except Product.DoesNotExist:
+                return Response({'error': 'Invalid product'}, status=status.HTTP_400_BAD_REQUEST)
         
         # Create order
         shipping_cost = 200  # Fixed shipping cost (KES)
@@ -101,12 +95,13 @@ class OrderViewSet(viewsets.ModelViewSet):
             notes=data.get('notes', '')
         )
         
-        # Create order items and update stock
+        # Create order items and update stock if applicable
         for item_data in order_items:
             OrderItem.objects.create(order=order, **item_data)
-            size_obj = Size.objects.get(product=item_data['product'], value=item_data['size'])
-            size_obj.stock -= item_data['quantity']
-            size_obj.save()
+            
+            if hasattr(item_data['product'], 'stock'):
+                item_data['product'].stock -= item_data['quantity']
+                item_data['product'].save()
         
         serializer = OrderSerializer(order, context={'request': request})
         return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -125,11 +120,11 @@ class OrderViewSet(viewsets.ModelViewSet):
         order.status = 'cancelled'
         order.save()
         
-        # Restore stock
+        # Restore stock if Product has stock field
         for item in order.items.all():
-            size = Size.objects.get(product=item.product, value=item.size)
-            size.stock += item.quantity
-            size.save()
+            if hasattr(item.product, 'stock'):
+                item.product.stock += item.quantity
+                item.product.save()
         
         serializer = self.get_serializer(order)
         return Response(serializer.data)

@@ -25,7 +25,7 @@ function Navbar({ mobileMenuOpen, setMobileMenuOpen }) {
 
   return (
     <header className="fixed top-0 left-0 right-0 bg-[#FDFBF9] shadow-md z-50 border-b border-[#EADBC8] backdrop-blur-sm">
-      <div className="max-w-7xl mx-auto px-6 sm:px-10">
+      <div className="w-full px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
           {/* Logo */}
           <div
@@ -52,7 +52,7 @@ function Navbar({ mobileMenuOpen, setMobileMenuOpen }) {
 
           {/* Right Icons */}
           <div className="flex items-center space-x-5">
-            {/* Search */}
+            {/* Search - Always visible for logged in users */}
             {user && (
               <button
                 onClick={() => setSearchOpen(!searchOpen)}
@@ -62,7 +62,7 @@ function Navbar({ mobileMenuOpen, setMobileMenuOpen }) {
               </button>
             )}
 
-            {/* User icon */}
+            {/* User icon - Only for logged in users */}
             {user && (
               <div className="relative">
                 <button
@@ -107,19 +107,35 @@ function Navbar({ mobileMenuOpen, setMobileMenuOpen }) {
               </div>
             )}
 
-            {/* Cart */}
-            {user && (
-              <button
-                onClick={() => navigate("/cart")}
-                className="relative text-[#5A3E2B] hover:text-[#C07A46] transition-colors p-2 rounded-full"
-              >
-                <ShoppingCart className="h-6 w-6" />
-                {cartItemsCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-[#C07A46] text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
-                    {cartItemsCount}
-                  </span>
-                )}
-              </button>
+            {/* Cart - ALWAYS VISIBLE */}
+            <button
+              onClick={() => navigate("/cart")}
+              className="relative text-[#5A3E2B] hover:text-[#C07A46] transition-colors p-2 rounded-full"
+            >
+              <ShoppingCart className="h-6 w-6" />
+              {cartItemsCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-[#C07A46] text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                  {cartItemsCount}
+                </span>
+              )}
+            </button>
+
+            {/* Login/Register - Show when NOT logged in */}
+            {!user && (
+              <div className="hidden md:flex items-center space-x-4">
+                <Link
+                  to="/login"
+                  className="text-[#5A3E2B] font-medium hover:text-[#C07A46] transition-colors"
+                >
+                  Login
+                </Link>
+                <Link
+                  to="/register"
+                  className="bg-[#C07A46] text-white px-4 py-2 rounded-lg font-semibold hover:bg-[#B86D3A] transition-colors"
+                >
+                  Sign Up
+                </Link>
+              </div>
             )}
 
             {/* Mobile menu toggle */}
@@ -162,15 +178,17 @@ function Navbar({ mobileMenuOpen, setMobileMenuOpen }) {
               </Link>
             ))}
 
-            {user && (
+            {/* Mobile: Always show cart */}
+            <Link
+              to="/cart"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block text-left py-3 px-4 text-[#5A3E2B] hover:bg-[#F7EFE7] rounded-md font-medium no-underline"
+            >
+              Cart ({cartItemsCount})
+            </Link>
+
+            {user ? (
               <>
-                <Link
-                  to="/cart"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="block text-left py-3 px-4 text-[#5A3E2B] hover:bg-[#F7EFE7] rounded-md font-medium no-underline"
-                >
-                  Cart
-                </Link>
                 <Link
                   to="/profile"
                   onClick={() => setMobileMenuOpen(false)}
@@ -195,6 +213,23 @@ function Navbar({ mobileMenuOpen, setMobileMenuOpen }) {
                 >
                   Logout
                 </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/login"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block text-left py-3 px-4 text-[#5A3E2B] hover:bg-[#F7EFE7] rounded-md font-medium no-underline"
+                >
+                  Login
+                </Link>
+                <Link
+                  to="/register"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block text-left py-3 px-4 bg-[#C07A46] text-white hover:bg-[#B86D3A] rounded-md font-medium no-underline"
+                >
+                  Sign Up
+                </Link>
               </>
             )}
           </nav>
