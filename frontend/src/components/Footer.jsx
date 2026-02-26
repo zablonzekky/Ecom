@@ -27,7 +27,7 @@ function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-gradient-to-b from-gray-900 via-gray-900 to-gray-950 text-white">
+    <footer className="bg-gray-900 text-white">
       {/* Newsletter Section */}
 
       {/* Main Footer Content */}
@@ -36,7 +36,7 @@ function Footer() {
           {/* Brand Column */}
           <div className="md:col-span-1 lg:col-span-1">
             <Link to="/" className="inline-block mb-4">
-              <span className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+              <span className="text-3xl font-bold text-white">
                 Ecom
               </span>
             </Link>

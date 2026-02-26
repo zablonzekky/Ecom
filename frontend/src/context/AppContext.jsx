@@ -88,7 +88,7 @@ export const AppProvider = ({ children }) => {
       }
 
       const address = await handleApiResponse(response);
-      console.log("✅ Address created successfully:", address);
+      console.log("Address created successfully:", address);
       setUserAddresses((prev) => [...prev, address]);
       return address;
     } catch (error) {
@@ -129,7 +129,7 @@ export const AppProvider = ({ children }) => {
         category__slug: categorySlug,
       });
 
-      console.log(`✅ Fetched ${categorySlug} products:`, data);
+      console.log(`Fetched ${categorySlug} products:`, data);
       setProducts(data.results || data);
     } catch (err) {
       console.error(
@@ -148,7 +148,7 @@ export const AppProvider = ({ children }) => {
       try {
         setIsLoading(true);
         const data = await api.get("/products/");
-        console.log("✅ Fetched all products:", data);
+        console.log("Fetched all products:", data);
         setProducts(data.results || data);
       } catch (err) {
         console.error("Failed to fetch products:", err);
@@ -226,7 +226,7 @@ const placeOrder = async (orderData) => {
     // First create the address
     console.log("Creating address with data:", orderData.address);
     const address = await createAddress(orderData.address);
-    console.log("✅ Address created with ID:", address.id);
+    console.log("Address created with ID:", address.id);
 
     // Then create the order with the address ID - Match CreateOrderSerializer exactly
     const orderPayload = {
@@ -259,7 +259,7 @@ const placeOrder = async (orderData) => {
     }
 
     const order = await handleApiResponse(response);
-    console.log("✅ Order created successfully:", order);
+    console.log("Order created successfully:", order);
 
     // Add to local state for immediate UI update
     setOrders((prev) => [order, ...prev]);
@@ -347,7 +347,7 @@ const placeOrder = async (orderData) => {
       await fetchUserOrders();
       await fetchUserAddresses();
 
-      console.log("✅ Login successful");
+      console.log("Login successful");
       return { success: true, user: userData };
     } catch (err) {
       console.error("Login failed:", err);
@@ -399,7 +399,7 @@ const placeOrder = async (orderData) => {
         throw new Error(data.detail || data.message || "Registration failed");
       }
 
-      console.log("✅ Registration successful");
+      console.log("Registration successful");
       // Auto-login after successful registration
       return await login(email, password);
     } catch (err) {
