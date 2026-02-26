@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
-import api from "../services/api";
-import toast from "react-hot-toast";
+import { API_BASE_URL } from "../services/api";
+import { showError, showSuccess } from "../services/toast";
 
 function LoginPage() {
   const { login } = useAppContext();
@@ -20,330 +20,93 @@ function LoginPage() {
     setError("");
 
     try {
-      // Make direct API call to get tokens
-      const response = await fetch('http://localhost:8000/api/auth/token/', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ username, password })
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        // Store both tokens in localStorage
-        localStorage.setItem('access_token', data.access);
-        localStorage.setItem('refresh_token', data.refresh);
-        
-        // Also store in sessionStorage for immediate access if needed
-        sessionStorage.setItem('access_token', data.access);
-        
-        console.log('Tokens stored:', {
-          access: data.access ? 'Yes' : 'No',
-          refresh: data.refresh ? 'Yes' : 'No'
-        });
-
-        // Create user data object
-        const userData = {
-          username,
-          token: data.access,
-          refreshToken: data.refresh,
-          name: username,
-          id: Date.now(),
-        };
-
-        // Call your context login function
-        await login(username, password);
-        
-        toast.success(`Login Successful`, {
-          duration: 2500,
-          position: "top-right",
-          style: {
-            background: "#10b981",
-            color: "#fff",
-            padding: "16px",
-            fontSize: "15px",
-            fontWeight: "500",
-          },
-          iconTheme: {
-            primary: "#fff",
-            secondary: "#10b981",
-          },
-        });
-
-        // Navigate after toast is visible
-        setTimeout(() => {
-          navigate(from, { replace: true });
-        }, 2000);
-      } else {
-        const errorMsg = data.detail || "Invalid credentials";
-        setError(errorMsg);
-        toast.error(errorMsg, {
-          duration: 4000,
-          position: "top-center",
-          style: {
-            background: "#ef4444",
-            color: "#fff",
-            padding: "16px",
-            fontSize: "15px",
-            fontWeight: "500",
-          },
-        });
-      }
+      await login(username, password);
+      showSuccess("Login successful.");
+      setTimeout(() => navigate(from, { replace: true }), 800);
     } catch (err) {
-      const errorMsg = err.response?.data?.detail || "Login failed. Please try again.";
+      const errorMsg = err?.message || "Unable to sign in. Check your credentials and try again.";
       setError(errorMsg);
-      toast.error(errorMsg, {
-        duration: 4000,
-        position: "top-center",
-        style: {
-          background: "#ef4444",
-          color: "#fff",
-          padding: "16px",
-          fontSize: "15px",
-          fontWeight: "500",
-        },
-      });
+      showError(errorMsg);
     } finally {
       setLoading(false);
     }
   };
 
-  // Social login handlers
-  const handleGoogleLogin = () => {
-    window.location.href = "http://localhost:8000/api/accounts/auth/google/";
-  };
-
-  const handleFacebookLogin = () => {
-    window.location.href = "http://localhost:8000/api/accounts/auth/facebook/";
+  const handleSocialLogin = (provider) => {
+    window.location.href = `${API_BASE_URL}/accounts/auth/${provider}/`;
   };
 
   return (
-    <div
-      className="min-vh-100 d-flex align-items-center justify-content-center p-3"
-      style={{
-        backgroundImage:
-          "linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url(https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1920&q=80)",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundRepeat: "no-repeat",
-        backgroundAttachment: "fixed",
-      }}
-    >
-      <div className="container-fluid">
-        <div className="row justify-content-center">
-          <div className="col-12 col-sm-11 col-md-9 col-lg-7 col-xl-5 col-xxl-4">
-            <div
-              className="card border-0 rounded-3 shadow"
-              style={{
-                backgroundColor: "rgba(255, 255, 255, 0.95)",
-                backdropFilter: "blur(10px)",
-              }}
-            >
-              <div className="card-body p-4">
-                {/* Header */}
-                <div className="text-center mb-3">
-                  <div className="mb-2">
-                    <div
-                      className="d-inline-flex align-items-center justify-content-center rounded-circle"
-                      style={{
-                        width: "56px",
-                        height: "56px",
-                        background:
-                          "linear-gradient(135deg, #FF6B6B 0%, #FFE66D 100%)",
-                      }}
-                    >
-                      <i
-                        className="fas fa-shopping-bag text-white"
-                        style={{ fontSize: "24px" }}
-                      ></i>
-                    </div>
-                  </div>
-                  <h2
-                    className="fw-bold mb-1"
-                    style={{
-                      fontSize: "24px",
-                      background:
-                        "linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%)",
-                      WebkitBackgroundClip: "text",
-                      WebkitTextFillColor: "transparent",
-                      backgroundClip: "text",
-                    }}
-                  >
-                    Welcome Back
-                  </h2>
-                  <p className="text-muted mb-0 small">
-                    Sign in to your account to continue
-                  </p>
-                </div>
-
-                {/* Social Login Buttons */}
-                <div className="row g-2 mb-3">
-                  <div className="col-6">
-                    <button
-                      type="button"
-                      onClick={handleGoogleLogin}
-                      className="btn btn-light border w-100 d-flex align-items-center justify-content-center py-2"
-                      disabled={loading}
-                    >
-                      <svg
-                        className="me-2"
-                        width="16"
-                        height="16"
-                        viewBox="0 0 18 18"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"
-                          fill="#4285F4"
-                        />
-                        <path
-                          d="M9.003 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.96v2.332C2.44 15.983 5.485 18 9.003 18z"
-                          fill="#34A853"
-                        />
-                        <path
-                          d="M3.964 10.712c-.18-.54-.282-1.117-.282-1.71 0-.593.102-1.17.282-1.71V4.96H.957C.347 6.175 0 7.55 0 9.002c0 1.452.348 2.827.957 4.042l3.007-2.332z"
-                          fill="#FBBC05"
-                        />
-                        <path
-                          d="M9.003 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.464.891 11.426 0 9.003 0 5.485 0 2.44 2.017.96 4.958L3.967 7.29c.708-2.127 2.692-3.71 5.036-3.71z"
-                          fill="#EA4335"
-                        />
-                      </svg>
-                      <span className="small fw-medium">Google</span>
-                    </button>
-                  </div>
-
-                  <div className="col-6">
-                    <button
-                      type="button"
-                      onClick={handleFacebookLogin}
-                      className="btn w-100 d-flex align-items-center justify-content-center py-2 text-white"
-                      style={{
-                        backgroundColor: "#1877F2",
-                        borderColor: "#1877F2",
-                      }}
-                      disabled={loading}
-                    >
-                      <i className="fab fa-facebook-f me-2"></i>
-                      <span className="small fw-medium">Facebook</span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Divider */}
-                <div className="position-relative text-center mb-3">
-                  <hr className="my-2" />
-                  <span className="position-absolute top-50 start-50 translate-middle bg-white px-2 text-muted small">
-                    OR
-                  </span>
-                </div>
-
-                {/* Error Alert */}
-                {error && (
-                  <div
-                    className="alert alert-danger d-flex align-items-center py-2 mb-3 small"
-                    role="alert"
-                  >
-                    <i className="fas fa-exclamation-circle me-2"></i>
-                    <span>{error}</span>
-                  </div>
-                )}
-
-                {/* Login Form */}
-                <form onSubmit={handleSubmit}>
-                  <div className="mb-3">
-                    <label
-                      htmlFor="username"
-                      className="form-label fw-semibold text-dark mb-1 small"
-                    >
-                      Username
-                    </label>
-                    <input
-                      id="username"
-                      type="text"
-                      required
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      className="form-control py-2"
-                      placeholder="Enter your username"
-                      disabled={loading}
-                    />
-                  </div>
-
-                  <div className="mb-3">
-                    <div className="d-flex justify-content-between align-items-center mb-1">
-                      <label
-                        htmlFor="password"
-                        className="form-label fw-semibold text-dark mb-0 small"
-                      >
-                        Password
-                      </label>
-                      <button
-                        type="button"
-                        className="btn btn-link text-primary text-decoration-none p-0 small"
-                        disabled={loading}
-                      >
-                        Forgot password?
-                      </button>
-                    </div>
-                    <input
-                      id="password"
-                      type="password"
-                      required
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="form-control py-2"
-                      placeholder="Enter your password"
-                      disabled={loading}
-                    />
-                  </div>
-
-                  <div className="d-grid mb-3">
-                    <button
-                      type="submit"
-                      disabled={loading}
-                      className="btn btn-primary py-2 fw-semibold"
-                      style={{
-                        background:
-                          "linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%)",
-                        border: "none",
-                      }}
-                    >
-                      {loading ? (
-                        <>
-                          <span
-                            className="spinner-border spinner-border-sm me-2"
-                            role="status"
-                          ></span>
-                          Signing In...
-                        </>
-                      ) : (
-                        "Sign In"
-                      )}
-                    </button>
-                  </div>
-                </form>
-
-                {/* Register Link */}
-                <div className="text-center">
-                  <p className="mb-0 text-muted small">
-                    Don&apos;t have an account?{" "}
-                    <button
-                      type="button"
-                      onClick={() => navigate("/register")}
-                      className="btn btn-link text-primary text-decoration-none p-0 fw-semibold small"
-                      disabled={loading}
-                    >
-                      Create account
-                    </button>
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+      <div className="w-full max-w-md bg-white border border-gray-200 rounded-xl shadow-sm p-6">
+        <div className="text-center mb-6">
+          <h1 className="text-2xl font-semibold text-gray-900">Sign in</h1>
+          <p className="text-sm text-gray-600 mt-1">Access your account and continue shopping.</p>
         </div>
+
+        <div className="grid grid-cols-2 gap-3 mb-4">
+          <button
+            type="button"
+            onClick={() => handleSocialLogin("google")}
+            className="border border-gray-300 rounded-md px-3 py-2 text-sm font-medium hover:bg-gray-50"
+            disabled={loading}
+          >
+            Continue with Google
+          </button>
+          <button
+            type="button"
+            onClick={() => handleSocialLogin("facebook")}
+            className="border border-gray-300 rounded-md px-3 py-2 text-sm font-medium hover:bg-gray-50"
+            disabled={loading}
+          >
+            Continue with Facebook
+          </button>
+        </div>
+
+        {error && <div className="mb-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded-md p-2">{error}</div>}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+            <input
+              id="username"
+              type="text"
+              required
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-400"
+              placeholder="Enter your username"
+              disabled={loading}
+            />
+          </div>
+          <div>
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+            <input
+              id="password"
+              type="password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-400"
+              placeholder="Enter your password"
+              disabled={loading}
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-gray-900 text-white rounded-md px-4 py-2 font-medium hover:bg-black disabled:opacity-60"
+          >
+            {loading ? "Signing in..." : "Sign in"}
+          </button>
+        </form>
+
+        <p className="text-sm text-gray-600 text-center mt-4">
+          Don&apos;t have an account?{" "}
+          <button type="button" onClick={() => navigate("/register")} className="text-blue-700 hover:underline" disabled={loading}>
+            Create account
+          </button>
+        </p>
       </div>
     </div>
   );

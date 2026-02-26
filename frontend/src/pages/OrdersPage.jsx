@@ -8,11 +8,11 @@ function OrdersPage() {
   const [filterStatus, setFilterStatus] = useState('all');
 
   const statusConfig = {
-    'Pending': { color: 'bg-gray-100 text-gray-800 border-gray-300', icon: '⏳', progress: 0 },
-    'Processing': { color: 'bg-amber-100 text-amber-800 border-amber-300', icon: '🔄', progress: 25 },
-    'Shipped': { color: 'bg-blue-100 text-blue-800 border-blue-300', icon: '🚚', progress: 75 },
-    'Delivered': { color: 'bg-green-100 text-green-800 border-green-300', icon: '✅', progress: 100 },
-    'Cancelled': { color: 'bg-red-100 text-red-800 border-red-300', icon: '❌', progress: 0 }
+    'Pending': { color: 'bg-gray-100 text-gray-800 border-gray-300', icon: 'P', progress: 0 },
+    'Processing': { color: 'bg-amber-100 text-amber-800 border-amber-300', icon: 'R', progress: 25 },
+    'Shipped': { color: 'bg-blue-100 text-blue-800 border-blue-300', icon: 'S', progress: 75 },
+    'Delivered': { color: 'bg-green-100 text-green-800 border-green-300', icon: 'D', progress: 100 },
+    'Cancelled': { color: 'bg-red-100 text-red-800 border-red-300', icon: 'C', progress: 0 }
   };
 
   const filteredOrders = filterStatus === 'all' 

@@ -1,6 +1,6 @@
 from django.db import models
-from django.contrib.auth.models import User  # ✅ Import User model
-from products.models import Product          # ✅ Import Product model
+from django.contrib.auth.models import User  # Import User model
+from products.models import Product          # Import Product model
 
 # Address model
 class Address(models.Model):
