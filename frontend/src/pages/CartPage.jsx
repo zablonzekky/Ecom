@@ -1,14 +1,16 @@
 // src/pages/CartPage.jsx
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
 import { Trash2, Plus, Minus, ShoppingBag, ArrowLeft } from "lucide-react";
+import ConfirmModal from "../components/ConfirmModal";
 
 function CartPage() {
   const navigate = useNavigate();
   const { user } = useAppContext();
   const { cart, updateCartItemQuantity, removeFromCart, getCartTotal } =
     useAppContext();
+  const [deleteItemId, setDeleteItemId] = useState(null);
 
   const handleQuantityChange = (cartItemId, newQuantity) => {
     if (newQuantity < 1) return;
@@ -16,9 +18,7 @@ function CartPage() {
   };
 
   const handleRemoveItem = (cartItemId) => {
-    if (window.confirm("Remove this item from cart?")) {
-      removeFromCart(cartItemId);
-    }
+    setDeleteItemId(cartItemId);
   };
 
   const handleCheckout = () => {
@@ -59,6 +59,7 @@ function CartPage() {
 
   // Cart with items
   return (
+    <>
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="w-full px-4 sm:px-6 lg:px-8">
         {/* Header */}
@@ -292,6 +293,16 @@ function CartPage() {
         </div>
       </div>
     </div>
+    <ConfirmModal
+      open={!!deleteItemId}
+      title="Remove item"
+      message="Do you want to remove this item from your shopping cart?"
+      confirmText="Yes, Remove"
+      cancelText="No"
+      onCancel={() => setDeleteItemId(null)}
+      onConfirm={() => { removeFromCart(deleteItemId); setDeleteItemId(null); }}
+    />
+    </>
   );
 }
 

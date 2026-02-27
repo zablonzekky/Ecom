@@ -47,7 +47,7 @@ function ProductCard({ product, viewMode = "grid" }) {
         className="bg-white rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer border border-gray-100 flex gap-6 p-4 group"
       >
         {/* Image Section */}
-        <div className="relative w-48 h-40 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg overflow-hidden flex-shrink-0">
+        <div className="relative w-48 h-40 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
           {product.primary_image && (
             <img
               src={product.primary_image}
@@ -56,12 +56,12 @@ function ProductCard({ product, viewMode = "grid" }) {
             />
           )}
           {product.discount_percentage > 0 && (
-            <div className="absolute top-3 left-3 bg-gradient-to-r from-red-500 to-red-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
+            <div className="absolute top-3 left-3 bg-red-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
               -{product.discount_percentage}%
             </div>
           )}
           {product.is_featured && (
-            <div className="absolute top-3 right-3 bg-gradient-to-r from-amber-400 to-amber-500 text-gray-900 px-2.5 py-0.5 rounded-full text-xs font-bold flex items-center gap-1">
+            <div className="absolute top-3 right-3 bg-amber-400 text-gray-900 px-2.5 py-0.5 rounded-full text-xs font-bold flex items-center gap-1">
               <Zap size={12} className="fill-current" /> Featured
             </div>
           )}
@@ -140,7 +140,7 @@ function ProductCard({ product, viewMode = "grid" }) {
             <button
               onClick={handleAddToCart}
               disabled={isOutOfStock}
-              className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:from-gray-400 disabled:to-gray-400 text-white px-4 py-2 rounded-lg font-semibold transition-all duration-300 text-sm"
+              className="flex items-center gap-2 bg-blue-700 hover:bg-blue-800 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg font-semibold transition-all duration-300 text-sm"
             >
               <ShoppingCart size={16} />
               Add
@@ -158,7 +158,7 @@ function ProductCard({ product, viewMode = "grid" }) {
       className="bg-white rounded-2xl shadow-sm overflow-hidden cursor-pointer hover:shadow-2xl transition-all duration-300 group border border-gray-100 h-full flex flex-col relative"
     >
       {/* Image Container */}
-      <div className="relative h-80 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
+      <div className="relative h-80 bg-gray-100 overflow-hidden">
         {product.primary_image && (
           <img
             src={product.primary_image}
@@ -170,12 +170,12 @@ function ProductCard({ product, viewMode = "grid" }) {
         {/* Badges */}
         <div className="absolute top-4 right-4 flex flex-col gap-2">
           {product.discount_percentage > 0 && (
-            <div className="bg-gradient-to-r from-red-500 to-red-600 text-white px-3 py-1.5 rounded-full text-sm font-bold shadow-lg">
+            <div className="bg-red-600 text-white px-3 py-1.5 rounded-full text-sm font-bold shadow-lg">
               -{product.discount_percentage}%
             </div>
           )}
           {product.is_featured && (
-            <div className="bg-gradient-to-r from-amber-400 to-amber-500 text-gray-900 px-2.5 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow-lg">
+            <div className="bg-amber-400 text-gray-900 px-2.5 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow-lg">
               <Zap size={13} className="fill-current" /> Featured
             </div>
           )}
@@ -204,7 +204,7 @@ function ProductCard({ product, viewMode = "grid" }) {
         )}
 
         {/* Hover Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       </div>
 
       {/* Content Container */}
@@ -281,7 +281,7 @@ function ProductCard({ product, viewMode = "grid" }) {
           <button
             onClick={handleAddToCart}
             disabled={isOutOfStock}
-            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:from-gray-400 disabled:to-gray-400 text-white py-3 rounded-lg font-bold transition-all duration-300 text-sm shadow-md hover:shadow-lg"
+            className="w-full flex items-center justify-center gap-2 bg-blue-700 hover:bg-blue-800 disabled:bg-gray-400 text-white py-3 rounded-lg font-bold transition-all duration-300 text-sm shadow-md hover:shadow-lg"
           >
             <ShoppingCart size={18} />
             Add to Cart

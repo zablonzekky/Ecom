@@ -1,16 +1,13 @@
 import React, { useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import { useAppContext } from "../context/AppContext";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import Layout from "../components/Layout";
 import api from "../services/api";
-import toast from "react-hot-toast";
+import { showError, showSuccess } from "../services/toast";
 
 function RegisterPage() {
   // const { setCurrentPage } = useAppContext();
-  const { register } = useAppContext();
   const navigate = useNavigate();
   const location = useLocation();
-  const from = location.state?.from?.pathname || "/";
   const [formData, setFormData] = useState({
     username: "",
     email: "",
@@ -61,10 +58,7 @@ function RegisterPage() {
     setError("");
 
     if (!validate()) {
-      toast.error("Please fix the errors in the form", {
-        duration: 3000,
-        position: "top-center",
-      });
+      showError("Please fix the highlighted form fields.");
       return;
     }
 
@@ -104,21 +98,7 @@ function RegisterPage() {
       // }
       if (response.user) {
         // Show success toast with longer duration
-        toast.success("Account created successfully! Please log in.", {
-          duration: 2500,
-          position: "top-right",
-          style: {
-            background: "#169001ff",
-            color: "#fff",
-            padding: "16px",
-            fontSize: "15px",
-            fontWeight: "500",
-          },
-          iconTheme: {
-            primary: "#fff",
-            secondary: "#10b981",
-          },
-        });
+        showSuccess("Account created successfully. Please sign in.");
 
         // Redirect to login page after registration
         setTimeout(() => {
@@ -126,10 +106,7 @@ function RegisterPage() {
         }, 2000);
       } else {
         setError(response.error || "Registration failed");
-        toast.error(response.error || "Registration failed", {
-          duration: 4000,
-          position: "top-center",
-        });
+        showError(response.error || "Registration failed");
       }
     } catch (err) {
       if (err.response && err.response.data) {
@@ -157,37 +134,22 @@ function RegisterPage() {
 
         if (Object.keys(fieldErrs).length > 0) {
           setFieldErrors(fieldErrs);
-          toast.error("Please fix the errors in the form", {
-            duration: 3000,
-            position: "top-center",
-          });
+          showError("Please fix the highlighted form fields.");
         } else if (data.detail) {
           setError(data.detail);
-          toast.error(data.detail, {
-            duration: 4000,
-            position: "top-center",
-          });
+          showError(data.detail);
         } else if (data.error) {
           setError(data.error);
-          toast.error(data.error, {
-            duration: 4000,
-            position: "top-center",
-          });
+          showError(data.error);
         } else {
           const errorMsg = "Registration failed. Please check your input.";
           setError(errorMsg);
-          toast.error(errorMsg, {
-            duration: 4000,
-            position: "top-center",
-          });
+          showError(errorMsg);
         }
       } else {
         const errorMsg = "Registration failed. Please check your input.";
         setError(errorMsg);
-        toast.error(errorMsg, {
-          duration: 4000,
-          position: "top-center",
-        });
+        showError(errorMsg);
       }
     } finally {
       setLoading(false);
@@ -203,6 +165,7 @@ function RegisterPage() {
               <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">
                 Create your account
               </h1>
+              <p className="text-sm text-gray-600 mt-2">or <Link to="/login" className="text-blue-700 hover:underline">sign in</Link></p>
             </header>
 
             {error && (

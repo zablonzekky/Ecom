@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { API_BASE_URL } from "../services/api";
+import { showError, showSuccess } from "../services/toast";
 import { Link } from "react-router-dom";
 import {
   Facebook,
@@ -7,36 +9,51 @@ import {
   Mail,
   MapPin,
   Phone,
-  ArrowRight,
   Heart,
 } from "lucide-react";
 
 function Footer() {
   const [email, setEmail] = useState("");
-  const [subscribed, setSubscribed] = useState(false);
 
-  const handleSubscribe = (e) => {
+  const handleSubscribe = async (e) => {
     e.preventDefault();
-    if (email) {
-      setSubscribed(true);
+    if (!email.trim()) return;
+    const response = await fetch(`${API_BASE_URL}/accounts/newsletter/subscribe/`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+    if (response.ok) {
+      showSuccess("Subscribed successfully.");
       setEmail("");
-      setTimeout(() => setSubscribed(false), 3000);
+    } else {
+      showError("Subscription failed.");
     }
   };
 
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-gradient-to-b from-gray-900 via-gray-900 to-gray-950 text-white">
+    <footer className="bg-gray-900 text-white">
       {/* Newsletter Section */}
 
       {/* Main Footer Content */}
       <div className="w-full px-4 sm:px-6 lg:px-8 py-16">
+      <div className="max-w-7xl mx-auto mb-10 bg-gray-800 rounded-xl p-5 flex flex-col md:flex-row gap-3 items-center justify-between">
+        <div>
+          <h3 className="font-semibold">Subscribe to our newsletter</h3>
+          <p className="text-sm text-gray-300">Get promotions and product updates.</p>
+        </div>
+        <form onSubmit={handleSubscribe} className="flex w-full md:w-auto gap-2">
+          <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" required placeholder="Enter your email" className="px-3 py-2 rounded-md text-gray-900 w-full md:w-72" />
+          <button className="bg-blue-600 px-4 py-2 rounded-md">Subscribe</button>
+        </form>
+      </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 max-w-7xl mx-auto mb-12">
           {/* Brand Column */}
           <div className="md:col-span-1 lg:col-span-1">
             <Link to="/" className="inline-block mb-4">
-              <span className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+              <span className="text-3xl font-bold text-white">
                 Ecom
               </span>
             </Link>

@@ -16,7 +16,7 @@ class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = CategorySerializer
     lookup_field = 'slug'
 
-    # ✅ IMPORTANT: ensure full image URLs are generated
+    # IMPORTANT: ensure full image URLs are generated
     def get_serializer_context(self):
         context = super().get_serializer_context()
         context['request'] = self.request
@@ -24,7 +24,7 @@ class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class ProductViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = Product.objects.filter(is_active=True).prefetch_related(
+    queryset = Product.objects.filter(is_active=True, stock__gt=0).prefetch_related(
         'images', 'sizes', 'reviews'
     )
     permission_classes = [IsAuthenticatedOrReadOnly]
@@ -34,7 +34,7 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
     search_fields = ['name', 'description']
     ordering_fields = ['price', 'created_at', 'name']
 
-    # ✅ IMPORTANT: ensure full image URLs are generated
+    # IMPORTANT: ensure full image URLs are generated
     def get_serializer_context(self):
         context = super().get_serializer_context()
         context['request'] = self.request
