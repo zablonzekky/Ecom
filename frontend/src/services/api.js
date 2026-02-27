@@ -1,7 +1,8 @@
 // src/services/api.js
 
-const API_BASE_URL = "http://localhost:8000/api";
+// const API_BASE_URL = "http://localhost:8000/api";
 
+const API_BASE_URL = "https://ecom-426a.onrender.com//api";
 // Function to refresh the access token
 async function refreshAccessToken() {
   const refreshToken = localStorage.getItem('refresh_token');
