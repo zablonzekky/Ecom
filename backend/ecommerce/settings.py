@@ -30,6 +30,10 @@ MPESA_PASSKEY = os.getenv("MPESA_PASSKEY")
 MPESA_ENVIRONMENT = os.getenv("MPESA_ENVIRONMENT", "sandbox")
 MPESA_CALLBACK_URL = os.getenv("MPESA_CALLBACK_URL")
 
+PAYPAL_CLIENT_ID = os.getenv("PAYPAL_CLIENT_ID")
+PAYPAL_CLIENT_SECRET = os.getenv("PAYPAL_CLIENT_SECRET")
+PAYPAL_ENVIRONMENT = os.getenv("PAYPAL_ENVIRONMENT", "sandbox")
+
 # =======================
 # Installed Apps
 # =======================
@@ -129,6 +133,11 @@ SOCIALACCOUNT_PROVIDERS = {
         },
     },
     "facebook": {
+        "APP": {
+            "client_id": os.getenv("FACEBOOK_APP_ID"),
+            "secret": os.getenv("FACEBOOK_APP_SECRET"),
+            "key": "",
+        },
         "SCOPE": ["email", "public_profile"],
         "FIELDS": [
             "id",
@@ -219,4 +228,31 @@ SIMPLE_JWT = {
 # =======================
 # CORS (optional)
 # =======================
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOWED_ORIGINS = [origin for origin in os.getenv("CORS_ALLOWED_ORIGINS", "http://localhost:3000").split(",") if origin]
+CORS_ALLOW_CREDENTIALS = True
+
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = "DENY"
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "standard": {
+            "format": "%(asctime)s %(levelname)s [%(name)s] %(message)s",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "standard",
+        },
+    },
+    "root": {"handlers": ["console"], "level": os.getenv("LOG_LEVEL", "INFO")},
+}
+
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "no-reply@ecom.local")
+CONTACT_RECEIVER_EMAIL = os.getenv("CONTACT_RECEIVER_EMAIL", "support@ecom.local")

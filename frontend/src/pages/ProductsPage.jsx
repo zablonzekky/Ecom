@@ -55,7 +55,6 @@ function ProductPage() {
 
   const handleBuyNow = () => {
     if (!selectedSize && product.sizes && product.sizes.length > 0) {
-      alert("Please select a size");
       return;
     }
 
@@ -153,7 +152,7 @@ function ProductPage() {
 
               {/* Discount Badge */}
               {product.discount_percentage > 0 && (
-                <div className="absolute top-4 left-4 bg-gradient-to-r from-red-500 to-pink-500 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg">
+                <div className="absolute top-4 left-4 bg-red-600 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg">
                   SAVE {product.discount_percentage}%
                 </div>
               )}
@@ -314,9 +313,9 @@ function ProductPage() {
               <button
                 onClick={handleBuyNow}
                 disabled={product.stock === 0}
-                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:from-gray-400 disabled:to-gray-400 text-white py-4 rounded-xl font-bold text-lg transition shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white py-4 rounded-xl font-bold text-lg transition shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
               >
-                🛒 Buy Now
+                Buy Now
               </button>
 
               {/* Added to Cart Notification */}
