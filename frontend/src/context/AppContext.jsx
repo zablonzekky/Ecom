@@ -21,7 +21,7 @@ export const AppProvider = ({ children }) => {
   const [userAddresses, setUserAddresses] = useState([]);
 
   // API base URL - make sure this matches your Django server
-  const API_BASE_URL = "http://localhost:8000/api";
+  const API_BASE_URL = "https://ecom-426a.onrender.com/api";
 
   // Helper function to handle API responses
   const handleApiResponse = async (response) => {
