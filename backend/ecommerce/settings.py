@@ -19,7 +19,7 @@ SECRET_KEY = os.getenv(
 DEBUG = os.getenv("DEBUG", "True") == "True"
 
 # ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(",")
-ALLOWED_HOSTS = ['ecom-426a.onrender.com', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['https://ecom-frontend-9qeq.onrender.com/', 'localhost', '127.0.0.1']
 # =======================
 # M-PESA Configuration
 # =======================
