@@ -37,17 +37,24 @@ export default function App() {
       <Router>
         <ScrollToTop />
         <div className="min-h-screen bg-gray-50 flex flex-col">
-          <Navbar mobileMenuOpen={mobileMenuOpen} setMobileMenuOpen={setMobileMenuOpen} />
+          <Navbar
+            mobileMenuOpen={mobileMenuOpen}
+            setMobileMenuOpen={setMobileMenuOpen}
+          />
           <main className="flex-grow pt-20">
             <Toaster position="top-right" reverseOrder={false} />
             <Routes>
+              {/* Public */}
               <Route path="/" element={<HomePage />} />
               <Route path="/shop" element={<ShopPage />} />
               <Route path="/product/:id" element={<ProductPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-              <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+
+              {/* ✅ Fixed: must include both :uid and :token to match Django's reset link */}
+              <Route path="/reset-password/:uid/:token" element={<ResetPasswordPage />} />
+
               <Route path="/auth/:provider" element={<SocialAuthPage />} />
               <Route path="/men" element={<MenPage />} />
               <Route path="/women" element={<WomenPage />} />
@@ -59,6 +66,7 @@ export default function App() {
               <Route path="/about" element={<AboutPage />} />
               <Route path="/FAQs" element={<FaqsPage />} />
 
+              {/* Protected */}
               <Route path="/checkout" element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
               <Route path="/checkout/mpesa" element={<ProtectedRoute><CheckoutMpesaPage /></ProtectedRoute>} />
               <Route path="/checkout/paypal" element={<ProtectedRoute><CheckoutPaypalPage /></ProtectedRoute>} />
