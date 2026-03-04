@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django.contrib.sites",
 
     # Third Party
     "corsheaders",
@@ -43,7 +44,6 @@ INSTALLED_APPS = [
     "rest_framework.authtoken",
     "dj_rest_auth",
     "dj_rest_auth.registration",
-    "django.contrib.sites",
     "allauth",
     "allauth.account",
     "allauth.socialaccount",
@@ -66,7 +66,7 @@ SITE_ID = 1
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
-    "corsheaders.middleware.CorsMiddleware",  # MUST stay before CommonMiddleware
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -127,14 +127,28 @@ REST_FRAMEWORK = {
 }
 
 REST_AUTH = {
-    "USE_JWT": False,
-    "TOKEN_MODEL": "rest_framework.authtoken.models.Token",
+    "USE_JWT": True,
+    "JWT_AUTH_COOKIE": None,
+    "JWT_AUTH_REFRESH_COOKIE": None,
+    "OLD_PASSWORD_FIELD_ENABLED": True,
+    "PASSWORD_RESET_USE_SITES_DOMAIN": False,
 }
 
+# =======================
+# Allauth
+# =======================
+ACCOUNT_ADAPTER = "accounts.adapter.CustomAccountAdapter"
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_AUTHENTICATION_METHOD = "email"
 ACCOUNT_EMAIL_VERIFICATION = "optional"
+ACCOUNT_DEFAULT_HTTP_PROTOCOL = "https"
+
+# =======================
+# Password Reset — points email link to React frontend
+# =======================
+FRONTEND_URL = os.getenv("FRONTEND_URL", "https://ecom-frontend-9qeq.onrender.com")
+PASSWORD_RESET_CONFIRM_URL = "reset-password/{uid}/{token}"
 
 # =======================
 # Social Providers
@@ -180,7 +194,7 @@ SIMPLE_JWT = {
 }
 
 # =======================
-# CORS Configuration
+# CORS
 # =======================
 CORS_ALLOWED_ORIGINS = os.getenv(
     "CORS_ALLOWED_ORIGINS",
@@ -208,8 +222,13 @@ X_FRAME_OPTIONS = "DENY"
 # =======================
 # Email
 # =======================
-EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
-DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "no-reply@ecom.local")
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "smtp.gmail.com"
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", EMAIL_HOST_USER)
 CONTACT_RECEIVER_EMAIL = os.getenv("CONTACT_RECEIVER_EMAIL", "support@ecom.local")
 
 # =======================
