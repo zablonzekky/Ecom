@@ -1,0 +1,1 @@
+default_app_config = "admin_app.users.apps.AdminUsersConfig"

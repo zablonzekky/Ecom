@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import Layout from "../components/Layout";
+import Layout from "../components/Layout/Layout";
 import api from "../services/api";
 import { showError, showSuccess } from "../services/toast";
 

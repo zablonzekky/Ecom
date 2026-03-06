@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
 import { ArrowRight, Truck, Shield, RefreshCw, Star } from "lucide-react";
 import ProductCard from "../components/ProductCard";
-import Layout from "../components/Layout";
+import Layout from "../components/Layout/Layout";
 
 function HomePage() {
   const { products = [] } = useAppContext();

@@ -1,37 +1,72 @@
-// src/services/api.js
+import axios from 'axios';
 
-// const API_BASE_URL = "http://localhost:8000/api";
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
 
-const API_BASE_URL = "https://ecom-426a.onrender.com/api";
-// Function to refresh the access token
-async function refreshAccessToken() {
-  const refreshToken = localStorage.getItem('refresh_token');
-  
-  if (!refreshToken) {
-    throw new Error('No refresh token available');
+// ─── Axios Instance ───────────────────────────────────────────────────────────
+const axiosInstance = axios.create({
+  baseURL: API_BASE_URL,
+  headers: { 'Content-Type': 'application/json' },
+});
+
+// Request interceptor — attach access token
+axiosInstance.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('access_token');
+    if (token) config.headers.Authorization = `Bearer ${token}`;
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+// Response interceptor — refresh token on 401
+axiosInstance.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const original = error.config;
+
+    if (error.response?.status === 401 && !original._retry) {
+      original._retry = true;
+      try {
+        const refresh = localStorage.getItem('refresh_token');
+        if (!refresh) throw new Error('No refresh token available');
+
+        const { data } = await axios.post(`${API_BASE_URL}/auth/token/refresh/`, { refresh });
+        localStorage.setItem('access_token', data.access);
+        original.headers.Authorization = `Bearer ${data.access}`;
+        return axiosInstance(original);
+      } catch {
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+      }
+    }
+
+    return Promise.reject(error);
   }
+);
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+const buildQueryString = (params) => {
+  if (!params) return '';
+  return (
+    '?' +
+    Object.entries(params)
+      .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+      .join('&')
+  );
+};
+
+// Standalone refresh export (used in places that call it directly)
+async function refreshAccessToken() {
+  const refresh = localStorage.getItem('refresh_token');
+  if (!refresh) throw new Error('No refresh token available');
 
   try {
-    const response = await fetch(`${API_BASE_URL}/auth/token/refresh/`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ refresh: refreshToken }),
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-      localStorage.setItem('access_token', data.access);
-      return data.access;
-    } else {
-      // Refresh token is also expired, need to login again
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
-      localStorage.removeItem('user');
-      throw new Error('Session expired. Please login again.');
-    }
-  } catch (error) {
+    const { data } = await axios.post(`${API_BASE_URL}/auth/token/refresh/`, { refresh });
+    localStorage.setItem('access_token', data.access);
+    return data.access;
+  } catch {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
     localStorage.removeItem('user');
@@ -39,141 +74,63 @@ async function refreshAccessToken() {
   }
 }
 
-// Enhanced fetch function with automatic token refresh
-async function fetchWithAuth(url, options = {}) {
-  let token = localStorage.getItem('access_token');
-
-  // Add authorization header if token exists
-  const headers = {
-    'Content-Type': 'application/json',
-    ...options.headers,
-  };
-
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-
-  // Make the initial request
-  let response = await fetch(url, {
-    ...options,
-    headers,
-  });
-
-  // If we get a 401, try to refresh the token
-  if (response.status === 401) {
-    try {
-      // Try to refresh the token
-      token = await refreshAccessToken();
-      
-      // Retry the request with the new token
-      headers['Authorization'] = `Bearer ${token}`;
-      response = await fetch(url, {
-        ...options,
-        headers,
-      });
-    } catch (error) {
-      // Refresh failed, redirect to login
-      window.location.href = '/login';
-      throw error;
-    }
-  }
-
-  return response;
-}
-
-// Helper to build query string from params object
-const buildQueryString = (params) => {
-  if (!params) return "";
-  return (
-    "?" +
-    Object.entries(params)
-      .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
-      .join("&")
-  );
-};
-
+// ─── API Methods ──────────────────────────────────────────────────────────────
 const api = {
-  // GET request with optional query params
+  // GET with optional query params
   get: async (endpoint, params = null, token = null) => {
-    const headers = { "Content-Type": "application/json" };
-    if (token) headers["Authorization"] = `Bearer ${token}`;
-
     const queryString = buildQueryString(params);
-    const response = await fetchWithAuth(`${API_BASE_URL}${endpoint}${queryString}`, { 
-      headers,
-      method: 'GET'
-    });
-
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw data;
+    const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+    const { data } = await axiosInstance.get(`${endpoint}${queryString}`, config);
     return data;
   },
 
-  // POST request
+  // POST
   post: async (endpoint, payload, token = null) => {
-    const headers = { "Content-Type": "application/json" };
-    if (token) headers["Authorization"] = `Bearer ${token}`;
-
-    const response = await fetchWithAuth(`${API_BASE_URL}${endpoint}`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(payload),
-    });
-
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw data;
+    const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+    const { data } = await axiosInstance.post(endpoint, payload, config);
     return data;
   },
 
-  // PUT request
+  // PUT
   put: async (endpoint, payload, token = null) => {
-    const headers = { "Content-Type": "application/json" };
-    if (token) headers["Authorization"] = `Bearer ${token}`;
-
-    const response = await fetchWithAuth(`${API_BASE_URL}${endpoint}`, {
-      method: "PUT",
-      headers,
-      body: JSON.stringify(payload),
-    });
-
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw data;
+    const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+    const { data } = await axiosInstance.put(endpoint, payload, config);
     return data;
   },
 
-  // DELETE request
+  // PATCH
+  patch: async (endpoint, payload, token = null) => {
+    const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+    const { data } = await axiosInstance.patch(endpoint, payload, config);
+    return data;
+  },
+
+  // DELETE
   delete: async (endpoint, token = null) => {
-    const headers = { "Content-Type": "application/json" };
-    if (token) headers["Authorization"] = `Bearer ${token}`;
-
-    const response = await fetchWithAuth(`${API_BASE_URL}${endpoint}`, {
-      method: "DELETE",
-      headers,
-    });
-
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw data;
+    const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+    const { data } = await axiosInstance.delete(endpoint, config);
     return data;
   },
 
-  // Convenience method for authenticated requests (auto-uses token from localStorage)
+  // Authenticated convenience methods (auto-reads token from localStorage)
   authenticated: {
-    get: async (endpoint, params = null) => {
+    get: (endpoint, params = null) => {
       const token = localStorage.getItem('access_token');
       return api.get(endpoint, params, token);
     },
-    
-    post: async (endpoint, payload) => {
+    post: (endpoint, payload) => {
       const token = localStorage.getItem('access_token');
       return api.post(endpoint, payload, token);
     },
-    
-    put: async (endpoint, payload) => {
+    put: (endpoint, payload) => {
       const token = localStorage.getItem('access_token');
       return api.put(endpoint, payload, token);
     },
-    
-    delete: async (endpoint) => {
+    patch: (endpoint, payload) => {
+      const token = localStorage.getItem('access_token');
+      return api.patch(endpoint, payload, token);
+    },
+    delete: (endpoint) => {
       const token = localStorage.getItem('access_token');
       return api.delete(endpoint, token);
     },
@@ -181,4 +138,4 @@ const api = {
 };
 
 export default api;
-export { API_BASE_URL, refreshAccessToken };
+export { API_BASE_URL, refreshAccessToken, axiosInstance };

@@ -1,11 +1,12 @@
+"""
+settings.py — Merged ecommerce + admin dashboard settings
+"""
+
 from pathlib import Path
 from datetime import timedelta
 import os
 from dotenv import load_dotenv
 
-# =======================
-# Load Environment Variables
-# =======================
 load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -42,6 +43,8 @@ INSTALLED_APPS = [
     "corsheaders",
     "rest_framework",
     "rest_framework.authtoken",
+    "rest_framework_simplejwt",
+    "rest_framework_simplejwt.token_blacklist",     # enables logout blacklisting
     "dj_rest_auth",
     "dj_rest_auth.registration",
     "allauth",
@@ -49,13 +52,24 @@ INSTALLED_APPS = [
     "allauth.socialaccount",
     "allauth.socialaccount.providers.google",
     "allauth.socialaccount.providers.facebook",
+    "django_filters",
 
-    # Local Apps
+    # Local — storefront apps
     "products",
     "accounts",
     "orders",
     "payments",
     "Google",
+
+    # Local — admin dashboard apps
+    "admin_app",
+    "admin_app.users",
+    "admin_app.orders",
+    "admin_app.products",
+    "admin_app.analytics",
+    "admin_app.discounts",
+    "admin_app.reviews",
+    "admin_app.notifications",
 ]
 
 SITE_ID = 1
@@ -65,6 +79,7 @@ SITE_ID = 1
 # =======================
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -116,6 +131,9 @@ AUTHENTICATION_BACKENDS = (
     "allauth.account.auth_backends.AuthenticationBackend",
 )
 
+# =======================
+# REST Framework
+# =======================
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
@@ -124,6 +142,14 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": (
         "rest_framework.permissions.AllowAny",
     ),
+    "DEFAULT_FILTER_BACKENDS": [
+        "django_filters.rest_framework.DjangoFilterBackend",
+        "rest_framework.filters.SearchFilter",
+        "rest_framework.filters.OrderingFilter",
+    ],
+    # Pagination used by admin viewsets
+    "DEFAULT_PAGINATION_CLASS": "admin_app.pagination.StandardResultsPagination",
+    "PAGE_SIZE": 20,
 }
 
 REST_AUTH = {
@@ -135,6 +161,17 @@ REST_AUTH = {
 }
 
 # =======================
+# JWT
+# =======================
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
+    "AUTH_HEADER_TYPES": ("Bearer",),
+}
+
+# =======================
 # Allauth
 # =======================
 ACCOUNT_ADAPTER = "accounts.adapter.CustomAccountAdapter"
@@ -143,12 +180,20 @@ ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_AUTHENTICATION_METHOD = "email"
 ACCOUNT_EMAIL_VERIFICATION = "optional"
 ACCOUNT_DEFAULT_HTTP_PROTOCOL = "https"
+ACCOUNT_USER_MODEL_USERNAME_FIELD = None 
 
 # =======================
-# Password Reset — points email link to React frontend
+# Password Reset
 # =======================
 FRONTEND_URL = os.getenv("FRONTEND_URL", "https://ecom-frontend-9qeq.onrender.com")
 PASSWORD_RESET_CONFIRM_URL = "reset-password/{uid}/{token}"
+
+AUTH_PASSWORD_VALIDATORS = [
+    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
+    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
+    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
+    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
+]
 
 # =======================
 # Social Providers
@@ -173,32 +218,32 @@ SOCIALACCOUNT_PROVIDERS = {
 }
 
 # =======================
+# Internationalisation
+# =======================
+LANGUAGE_CODE = "en-us"
+TIME_ZONE = "UTC"
+USE_I18N = True
+USE_TZ = True
+
+# =======================
 # Static & Media
 # =======================
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "static"]
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-
-# =======================
-# JWT Settings
-# =======================
-SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
-    "AUTH_HEADER_TYPES": ("Bearer",),
-}
-
+AUTH_USER_MODEL = 'admin_users.User'
 # =======================
 # CORS
 # =======================
 CORS_ALLOWED_ORIGINS = os.getenv(
     "CORS_ALLOWED_ORIGINS",
-    "http://localhost:3000"
+    "http://localhost:3000,http://127.0.0.1:3000"
 ).split(",")
 
 CORS_ALLOW_CREDENTIALS = True
@@ -206,9 +251,10 @@ CORS_ALLOW_CREDENTIALS = True
 # =======================
 # CSRF
 # =======================
-CSRF_TRUSTED_ORIGINS = [
-    "https://ecom-frontend-9qeq.onrender.com",
-]
+CSRF_TRUSTED_ORIGINS = os.getenv(
+    "CSRF_TRUSTED_ORIGINS",
+    "https://ecom-frontend-9qeq.onrender.com"
+).split(",")
 
 # =======================
 # Production Security
