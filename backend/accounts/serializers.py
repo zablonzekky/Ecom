@@ -25,19 +25,18 @@ class ContactMessageSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'date_joined']
-        read_only_fields = ['id', 'username', 'date_joined']
+        fields = ['id', 'email', 'first_name', 'last_name', 'date_joined']
+        read_only_fields = ['id', 'date_joined']
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'date_joined']
-        read_only_fields = ['id', 'username', 'date_joined']
+        fields = ['id', 'email', 'first_name', 'last_name', 'date_joined']
+        read_only_fields = ['id', 'date_joined']
 
 
 class RegisterSerializer(serializers.Serializer):
-    username = serializers.CharField(max_length=150, required=True)
     email = serializers.EmailField(required=True)
     password = serializers.CharField(write_only=True, required=True)
     password2 = serializers.CharField(write_only=True, required=True)
@@ -45,31 +44,27 @@ class RegisterSerializer(serializers.Serializer):
     last_name = serializers.CharField(max_length=30, required=False, allow_blank=True)
 
     def validate(self, attrs):
-        required_fields = ['username', 'email', 'password', 'password2']
+        required_fields = ['email', 'password', 'password2']
         for field in required_fields:
             if not attrs.get(field):
-                raise serializers.ValidationError({'error': 'All fields are required'})
+                raise serializers.ValidationError({'error': f'{field} is required'})
 
         if attrs['password'] != attrs['password2']:
-            raise serializers.ValidationError({'error': 'Passwords do not match'})
-
-        if User.objects.filter(username=attrs['username']).exists():
-            raise serializers.ValidationError({'error': 'Username already exists'})
+            raise serializers.ValidationError({'password2': 'Passwords do not match'})
 
         if User.objects.filter(email=attrs['email']).exists():
-            raise serializers.ValidationError({'error': 'Email already exists'})
+            raise serializers.ValidationError({'email': 'An account with this email already exists'})
 
         try:
             validate_password(attrs['password'])
         except ValidationError as e:
-            raise serializers.ValidationError({'error': list(e.messages)})
+            raise serializers.ValidationError({'password': list(e.messages)})
 
         return attrs
 
     def create(self, validated_data):
         validated_data.pop('password2')
         return User.objects.create_user(
-            username=validated_data['username'],
             email=validated_data['email'],
             password=validated_data['password'],
             first_name=validated_data.get('first_name', ''),
@@ -82,12 +77,14 @@ class RegisterSerializer(serializers.Serializer):
             'message': 'User created successfully',
             'user': {
                 'id': instance.id,
-                'username': instance.username,
                 'email': instance.email,
                 'first_name': instance.first_name,
                 'last_name': instance.last_name,
             },
-            'tokens': {'refresh': str(refresh), 'access': str(refresh.access_token)},
+            'tokens': {
+                'refresh': str(refresh),
+                'access': str(refresh.access_token),
+            },
         }
 
 

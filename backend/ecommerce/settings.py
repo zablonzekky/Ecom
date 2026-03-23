@@ -19,8 +19,8 @@ SECRET_KEY = os.getenv(
     "unsafe-development-key-change-in-production",
 )
 
-DEBUG = os.getenv("DEBUG", "False") == "True"
-
+# DEBUG = os.getenv("DEBUG", "False") == "True"
+DEBUG = True
 ALLOWED_HOSTS = os.getenv(
     "ALLOWED_HOSTS",
     "localhost,127.0.0.1"
@@ -126,6 +126,9 @@ DATABASES = {
 # =======================
 # Authentication
 # =======================
+
+AUTH_USER_MODEL = "admin_users.User"
+
 AUTHENTICATION_BACKENDS = (
     "django.contrib.auth.backends.ModelBackend",
     "allauth.account.auth_backends.AuthenticationBackend",
@@ -159,7 +162,12 @@ REST_AUTH = {
     "OLD_PASSWORD_FIELD_ENABLED": True,
     "PASSWORD_RESET_USE_SITES_DOMAIN": False,
 }
-
+MPESA_CONSUMER_KEY = os.getenv("MPESA_CONSUMER_KEY")
+MPESA_CONSUMER_SECRET = os.getenv("MPESA_CONSUMER_SECRET")
+MPESA_SHORTCODE = os.getenv("MPESA_SHORTCODE")
+MPESA_PASSKEY = os.getenv("MPESA_PASSKEY")
+MPESA_CALLBACK_URL = os.getenv("MPESA_CALLBACK_URL")
+MPESA_ENVIRONMENT = os.getenv("MPESA_ENVIRONMENT", "sandbox")
 # =======================
 # JWT
 # =======================
@@ -172,20 +180,33 @@ SIMPLE_JWT = {
 }
 
 # =======================
-# Allauth
+# Allauth - email-only authentication (no username)
+# allauth 65.x uses ACCOUNT_LOGIN_METHODS but its internal checks.py
+# still validates ACCOUNT_AUTHENTICATION_METHOD -- both must be set.
 # =======================
 ACCOUNT_ADAPTER = "accounts.adapter.CustomAccountAdapter"
-ACCOUNT_EMAIL_REQUIRED = True
-ACCOUNT_USERNAME_REQUIRED = False
+
+# New-style config (allauth >= 0.56.0)
+ACCOUNT_LOGIN_METHODS = {"email"}
+ACCOUNT_SIGNUP_FIELDS = ["email*", "password1*", "password2*"]
+
+# Legacy setting -- still required by allauth's internal checks.py in v65
 ACCOUNT_AUTHENTICATION_METHOD = "email"
+
+ACCOUNT_USERNAME_REQUIRED = False
+ACCOUNT_USER_MODEL_USERNAME_FIELD = None
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_UNIQUE_EMAIL = True
 ACCOUNT_EMAIL_VERIFICATION = "optional"
 ACCOUNT_DEFAULT_HTTP_PROTOCOL = "https"
-ACCOUNT_USER_MODEL_USERNAME_FIELD = None 
 
 # =======================
 # Password Reset
 # =======================
-FRONTEND_URL = os.getenv("FRONTEND_URL", "https://ecom-frontend-9qeq.onrender.com")
+FRONTEND_URL = os.getenv(
+    "FRONTEND_URL",
+    "https://ecom-frontend-9qeq.onrender.com"
+)
 PASSWORD_RESET_CONFIRM_URL = "reset-password/{uid}/{token}"
 
 AUTH_PASSWORD_VALIDATORS = [
@@ -237,13 +258,13 @@ MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-AUTH_USER_MODEL = 'admin_users.User'
+
 # =======================
 # CORS
 # =======================
 CORS_ALLOWED_ORIGINS = os.getenv(
     "CORS_ALLOWED_ORIGINS",
-    "http://localhost:3000,http://127.0.0.1:3000"
+    "http://localhost:3000,http://127.0.0.1:8000"
 ).split(",")
 
 CORS_ALLOW_CREDENTIALS = True

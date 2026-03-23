@@ -7,50 +7,50 @@ import {
 } from 'lucide-react';
 
 const NAV_ITEMS = [
-  { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
+  { icon: LayoutDashboard, label: 'Dashboard', path: 'admin/dashboard' },
   {
-    icon: Package, label: 'Products', path: '/products',
+    icon: Package, label: 'Products', path: 'admin/products',
     children: [
-      { label: 'Product List', path: '/products' },
-      { label: 'Create Product', path: '/products/create' },
-      { label: 'Categories', path: '/products/categories' },
+      { label: 'Product List', path: 'admin/products' },
+      { label: 'Create Product', path: 'admin/products/create' },
+      { label: 'Categories', path: 'admin/products/categories' },
     ]
   },
   {
-    icon: ShoppingCart, label: 'Orders', path: '/orders',
+    icon: ShoppingCart, label: 'Orders', path: 'admin/orders',
     children: [
-      { label: 'Order List', path: '/orders' },
-      { label: 'Refunds', path: '/orders/refunds' },
+      { label: 'Order List', path: 'admin/orders' },
+      { label: 'Refunds', path: 'admin/orders/refunds' },
     ]
   },
-  { icon: Users, label: 'Customers', path: '/customers' },
-  { icon: Users, label: 'Users', path: '/users' },
+  { icon: Users, label: 'Customers', path: 'admin/customers' },
+  { icon: Users, label: 'Users', path: 'admin/users' },
   {
-    icon: BarChart2, label: 'Analytics', path: '/analytics',
+    icon: BarChart2, label: 'Analytics', path: 'admin/analytics',
     children: [
-      { label: 'Overview', path: '/analytics' },
-      { label: 'Sales', path: '/analytics/sales' },
+      { label: 'Overview', path: 'admin/analytics' },
+      { label: 'Sales', path: 'admin/analytics/sales' },
     ]
   },
-  { icon: Tag, label: 'Discounts', path: '/discounts' },
+  { icon: Tag, label: 'Discounts', path: 'admin/discounts' },
   {
-    icon: Megaphone, label: 'Promotions', path: '/promotions',
+    icon: Megaphone, label: 'Promotions', path: 'admin/promotions',
     children: [
-      { label: 'Campaigns', path: '/promotions' },
-      { label: 'Banners', path: '/promotions/banners' },
+      { label: 'Campaigns', path: 'admin/promotions' },
+      { label: 'Banners', path: 'admin/promotions/banners' },
     ]
   },
-  { icon: Star, label: 'Reviews', path: '/reviews' },
-  { icon: Bell, label: 'Notifications', path: '/notifications' },
-  { icon: FileText, label: 'Logs', path: '/logs' },
+  { icon: Star, label: 'Reviews', path: 'admin/reviews' },
+  { icon: Bell, label: 'Notifications', path: 'admin/notifications' },
+  { icon: FileText, label: 'Logs', path: 'admin/logs' },
   {
-    icon: Settings, label: 'Settings', path: '/settings',
+    icon: Settings, label: 'Settings', path: 'admin/settings',
     children: [
-      { label: 'General', path: '/settings' },
-      { label: 'Personalization', path: '/settings/personalization' },
-      { label: 'Homepage Layout', path: '/settings/homepage' },
-      { label: 'Banners', path: '/settings/banners' },
-      { label: 'Themes', path: '/settings/themes' },
+      { label: 'General', path: 'admin/settings' },
+      { label: 'Personalization', path: 'admin/settings/personalization' },
+      { label: 'Homepage Layout', path: 'admin/settings/homepage' },
+      { label: 'Banners', path: 'admin/settings/banners' },
+      { label: 'Themes', path: 'admin/settings/themes' },
     ]
   },
 ];

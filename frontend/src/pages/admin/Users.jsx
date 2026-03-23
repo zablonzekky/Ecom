@@ -3,7 +3,7 @@ import { UserPlus, Search, Pencil, Trash2, Clock } from 'lucide-react';
 import { userService } from '../../services';
 import {
   StatusBadge, Avatar, LoadingState, ConfirmModal,
-  Pagination, Modal, StatCard, EmptyState
+  Pagination, Modal, EmptyState
 } from '../../components/common';
 import toast from 'react-hot-toast';
 import { Users } from 'lucide-react';
@@ -45,11 +45,11 @@ function UserForm({ initial, onSubmit, onClose, loading }) {
         <div className="grid-2 mb-4">
           <div className="form-group">
             <label className="form-label">Password</label>
-            <input type="password" className="form-control" value={form.password} onChange={set('password')} required={!initial} />
+            <input type="password" className="form-control" value={form.password} onChange={set('password')} required />
           </div>
           <div className="form-group">
             <label className="form-label">Confirm Password</label>
-            <input type="password" className="form-control" value={form.confirm_password} onChange={set('confirm_password')} required={!initial} />
+            <input type="password" className="form-control" value={form.confirm_password} onChange={set('confirm_password')} required />
           </div>
         </div>
       )}
@@ -107,6 +107,8 @@ export default function UsersPage() {
   const [deleteTarget, setDeleteTarget] = useState(null);
 
   const fetchUsers = useCallback(async () => {
+    // FIX: always set loading true at the start, and ALWAYS clear it in finally —
+    // prevents the page staying blurred/overlaid if the request errors out.
     setLoading(true);
     try {
       const params = { page, page_size: 10 };
@@ -117,9 +119,13 @@ export default function UsersPage() {
       setUsers(data.results || []);
       setTotalPages(data.total_pages || 1);
       setTotalCount(data.count || 0);
-    } catch (err) {
+    } catch {
       toast.error('Failed to load users');
+      // FIX: clear users on error so the table doesn't show stale data
+      setUsers([]);
     } finally {
+      // FIX: this runs whether the request succeeded OR failed,
+      // so loading is never stuck as true — the blur overlay always clears.
       setLoading(false);
     }
   }, [page, search, roleFilter, statusFilter]);
@@ -127,8 +133,8 @@ export default function UsersPage() {
   useEffect(() => { fetchUsers(); }, [fetchUsers]);
 
   useEffect(() => {
-    userService.stats().then(r => setStats(r.data)).catch(() => {});
-    userService.recentActivity().then(r => setActivity(r.data)).catch(() => {});
+    userService.stats().then(r => setStats(r.data || {})).catch(() => {});
+    userService.recentActivity().then(r => setActivity(r.data?.results || r.data || [])).catch(() => {});
   }, []);
 
   const handleCreate = async (form) => {
@@ -181,6 +187,9 @@ export default function UsersPage() {
     return `${Math.floor(diff / 86400)} days ago`;
   };
 
+  // Safe number helper — prevents NaN/undefined crashing the render
+  const n = (val) => Number(val) || 0;
+
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 280px', gap: 24 }}>
       {/* Main Column */}
@@ -197,17 +206,17 @@ export default function UsersPage() {
         <div className="grid-3 mb-6">
           <div className="stat-card">
             <div className="stat-icon"><Users size={20} /></div>
-            <div className="stat-value">{stats.total_users?.toLocaleString() || 0}</div>
+            <div className="stat-value">{n(stats.total_users).toLocaleString()}</div>
             <div className="stat-label">Total Users</div>
           </div>
           <div className="stat-card">
             <div className="stat-icon"><Users size={20} /></div>
-            <div className="stat-value">{stats.active_users?.toLocaleString() || 0}</div>
+            <div className="stat-value">{n(stats.active_users).toLocaleString()}</div>
             <div className="stat-label">Active Users</div>
           </div>
           <div className="stat-card">
             <div className="stat-icon"><UserPlus size={20} /></div>
-            <div className="stat-value">{stats.new_today || 0}</div>
+            <div className="stat-value">{n(stats.new_today)}</div>
             <div className="stat-label">New Users Today</div>
           </div>
         </div>
@@ -263,7 +272,11 @@ export default function UsersPage() {
                       </td>
                       <td style={{ color: 'var(--text-secondary)' }}>{user.email}</td>
                       <td style={{ textTransform: 'capitalize' }}>{user.role}</td>
-                      <td><StatusBadge status={user.status} /></td>
+                      <td>
+                        {/* FIX: normalise status to lowercase so StatusBadge always
+                            receives a value it can match regardless of API casing */}
+                        <StatusBadge status={(user.status ?? 'inactive').toLowerCase()} />
+                      </td>
                       <td style={{ color: 'var(--text-muted)', fontSize: 13 }}>{formatTime(user.last_login)}</td>
                       <td>
                         <div className="flex gap-2">
@@ -314,16 +327,16 @@ export default function UsersPage() {
           <div className="card-header"><h3 style={{ fontSize: 14, fontWeight: 600 }}>Quick Stats</h3></div>
           <div className="card-body" style={{ paddingTop: 12 }}>
             {[
-              { icon: Clock, label: 'Recent logins', value: stats.total_users || 0 },
-              { icon: UserPlus, label: 'New today', value: stats.new_today || 0 },
-              { icon: Clock, label: 'Active sessions', value: stats.active_users || 0 },
+              { icon: Clock,    label: 'Recent logins',   value: n(stats.total_users) },
+              { icon: UserPlus, label: 'New today',        value: n(stats.new_today) },
+              { icon: Clock,    label: 'Active sessions',  value: n(stats.active_users) },
             ].map(({ icon: Icon, label, value }) => (
               <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
                 <div className="stat-icon" style={{ width: 36, height: 36, marginBottom: 0, borderRadius: 8 }}>
                   <Icon size={16} />
                 </div>
                 <div>
-                  <div style={{ fontWeight: 700, fontSize: 16 }}>{value?.toLocaleString()}</div>
+                  <div style={{ fontWeight: 700, fontSize: 16 }}>{value.toLocaleString()}</div>
                   <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{label}</div>
                 </div>
               </div>

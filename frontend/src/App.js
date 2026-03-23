@@ -10,8 +10,20 @@ import Footer from "./components/Footer";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ScrollToTop from "./components/ScrollToTop";
 
-// Admin components
+
 import AdminLayout from "./components/Layout/AdminLayout";
+import AdminLoginPage from "./pages/admin/Adminlogin";
+import DashboardPage from "./pages/admin/Dashboard";
+import UsersPage from "./pages/admin/Users";
+import AdminOrdersPage from "./pages/admin/Orders";
+import ProductList from "./pages/admin/ProductList";
+import CreateProduct from "./pages/admin/CreateProduct";
+import ProductCategories from "./pages/admin/ProductCategories";
+import AnalyticsPage from "./pages/analytics/analytics";
+import SettingsPage from "./pages/admin/Settings";
+import { DiscountsPage } from "./Shared/Discounts";
+import { ReviewsPage } from "./Shared/Reviews";
+import { NotificationsPage } from "./Shared/Notifications";
 
 // Storefront pages
 import HomePage from "./pages/HomePage";
@@ -36,30 +48,28 @@ import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import SocialAuthPage from "./pages/SocialAuthPage";
 
-// Admin pages
-import AdminLoginPage from "./pages/admin/Adminlogin";
-import DashboardPage from "./pages/admin/Dashboard";
-import UsersPage from "./pages/admin/Users";
-import AdminOrdersPage from "./pages/admin/Orders";
-import ProductsPage from "./pages/admin/Products";
-import AnalyticsPage from "./pages/analytics/analytics";
-import SettingsPage from "./pages/admin/Settings";
-import { DiscountsPage } from "./Shared/Discounts";
-import { ReviewsPage } from "./Shared/Reviews";
-import { NotificationsPage } from "./Shared/Notifications";
+
 
 // ─── Admin Protected Route ────────────────────────────────────────────────────
 function AdminProtectedRoute({ children }) {
   const { user, loading } = useAuth();
 
-  if (loading)
+  if (loading) {
     return (
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh" }}>
         <div className="spinner" style={{ width: 36, height: 36 }} />
       </div>
     );
+  }
 
+  // Not logged in
   if (!user) return <Navigate to="/admin/login" replace />;
+
+  // Logged in but not an admin/editor — send back to admin login, not storefront
+  if (!['admin', 'editor'].includes(user.role)) {
+    return <Navigate to="/admin/login" replace />;
+  }
+
   return children;
 }
 
@@ -89,7 +99,8 @@ export default function App() {
   return (
     <AuthProvider>
       <AppProvider>
-        <Router>
+        {/* FIX: Added future flags to silence React Router v7 warnings */}
+        <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <ScrollToTop />
           <Toaster
             position="top-right"
@@ -113,9 +124,9 @@ export default function App() {
               <Route path="/admin/customers" element={<UsersPage />} />
               <Route path="/admin/orders" element={<AdminOrdersPage />} />
               <Route path="/admin/orders/refunds" element={<AdminOrdersPage />} />
-              <Route path="/admin/products" element={<ProductsPage />} />
-              <Route path="/admin/products/create" element={<ProductsPage />} />
-              <Route path="/admin/products/categories" element={<ProductsPage />} />
+              <Route path="/admin/products" element={<ProductList />} />
+              <Route path="/admin/products/create" element={<CreateProduct />} />
+              <Route path="/admin/products/categories" element={<ProductCategories />} />
               <Route path="/admin/analytics" element={<AnalyticsPage />} />
               <Route path="/admin/analytics/sales" element={<AnalyticsPage />} />
               <Route path="/admin/discounts" element={<DiscountsPage />} />
@@ -152,7 +163,7 @@ export default function App() {
                     <Route path="/about" element={<AboutPage />} />
                     <Route path="/FAQs" element={<FaqsPage />} />
 
-                    {/* Protected */}
+                    {/* Protected storefront routes */}
                     <Route path="/checkout" element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
                     <Route path="/checkout/mpesa" element={<ProtectedRoute><CheckoutMpesaPage /></ProtectedRoute>} />
                     <Route path="/checkout/paypal" element={<ProtectedRoute><CheckoutPaypalPage /></ProtectedRoute>} />

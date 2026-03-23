@@ -4,11 +4,13 @@ from django.db.models import Sum, Count, Avg, F, Q
 from django.db.models.functions import TruncDate, TruncWeek, TruncMonth, ExtractHour
 from django.utils import timezone
 from datetime import timedelta
+from django.contrib.auth import get_user_model
 
 from admin_app.permissions import IsAdminUser
-from admin_app.orders.models import Order, OrderItem
-from admin_app.products.models import Product
-from admin_app.users.models import User
+from orders.models import Order, OrderItem
+from products.models import Product
+
+User = get_user_model()
 
 
 def get_date_range(request):
@@ -45,12 +47,15 @@ class DashboardStatsView(APIView):
         prev_revenue = prev_orders.filter(status='completed').aggregate(t=Sum('total'))['t'] or 0
         curr_count = curr_orders.count()
         prev_count = prev_orders.count()
-        curr_customers = User.objects.filter(date_joined__range=(start, end), role='customer').count()
-        prev_customers = User.objects.filter(date_joined__range=(prev_start, prev_end), role='customer').count()
+
+        # User has no role field — use is_staff/is_active instead
+        curr_customers = User.objects.filter(date_joined__range=(start, end), is_staff=False).count()
+        prev_customers = User.objects.filter(date_joined__range=(prev_start, prev_end), is_staff=False).count()
+        total_customers = User.objects.filter(is_staff=False).count()
+
         curr_aov = curr_orders.filter(status='completed').aggregate(a=Avg('total'))['a'] or 0
         prev_aov = prev_orders.filter(status='completed').aggregate(a=Avg('total'))['a'] or 0
         total_sales = Order.objects.filter(status='completed').aggregate(t=Sum('total'))['t'] or 0
-        total_customers = User.objects.filter(role='customer').count()
 
         return Response({
             'total_sales': float(total_sales),
@@ -91,9 +96,16 @@ class SalesChartView(APIView):
         else:
             qs = qs.annotate(period=TruncDate('created_at'))
 
-        grouped = qs.values('period').annotate(revenue=Sum('total'), orders=Count('id')).order_by('period')
+        grouped = qs.values('period').annotate(
+            revenue=Sum('total'), orders=Count('id')
+        ).order_by('period')
+
         return Response([
-            {'date': item['period'].strftime('%Y-%m-%d'), 'revenue': float(item['revenue'] or 0), 'orders': item['orders']}
+            {
+                'date': item['period'].strftime('%Y-%m-%d'),
+                'revenue': float(item['revenue'] or 0),
+                'orders': item['orders'],
+            }
             for item in grouped
         ])
 
@@ -170,7 +182,7 @@ class TopProductsView(APIView):
             .values('product__id', 'product__name', 'product__category__name')
             .annotate(
                 units_sold=Sum('quantity'),
-                revenue=Sum(F('quantity') * F('unit_price')),
+                revenue=Sum(F('quantity') * F('price')),  # unit_price → price
             )
             .order_by('-revenue')[:limit]
         )
@@ -191,14 +203,14 @@ class ProductStockView(APIView):
 
     def get(self, request):
         products = Product.objects.select_related('category').values(
-            'id', 'name', 'stock', 'status', 'category__name'
+            'id', 'name', 'stock', 'is_active', 'category__name'  # status → is_active
         ).order_by('stock')[:20]
         return Response([
             {
                 'id': p['id'],
                 'name': p['name'],
                 'stock': p['stock'],
-                'status': p['status'],
+                'status': 'active' if p['is_active'] else 'inactive',
                 'category': p['category__name'] or 'Uncategorized',
                 'stock_level': 'critical' if p['stock'] == 0 else 'low' if p['stock'] <= 10 else 'ok',
             }
@@ -215,15 +227,15 @@ class TopCustomersView(APIView):
         limit = int(request.query_params.get('limit', 10))
         data = (
             Order.objects.filter(created_at__range=(start, end), status='completed')
-            .values('customer__id', 'customer__first_name', 'customer__last_name', 'customer__email')
+            .values('user__id', 'user__first_name', 'user__last_name', 'user__email')  # customer → user
             .annotate(total_spent=Sum('total'), order_count=Count('id'))
             .order_by('-total_spent')[:limit]
         )
         return Response([
             {
-                'id': d['customer__id'],
-                'name': f"{d['customer__first_name']} {d['customer__last_name']}".strip(),
-                'email': d['customer__email'],
+                'id': d['user__id'],
+                'name': f"{d['user__first_name']} {d['user__last_name']}".strip(),
+                'email': d['user__email'],
                 'total_spent': float(d['total_spent'] or 0),
                 'order_count': d['order_count'],
                 'avg_order': float((d['total_spent'] or 0) / d['order_count']) if d['order_count'] else 0,
@@ -240,7 +252,7 @@ class CustomerGrowthView(APIView):
         end = timezone.now()
         start = end - timedelta(days=days)
         data = (
-            User.objects.filter(date_joined__range=(start, end), role='customer')
+            User.objects.filter(date_joined__range=(start, end), is_staff=False)
             .annotate(day=TruncDate('date_joined'))
             .values('day')
             .annotate(new_customers=Count('id'))
@@ -259,7 +271,7 @@ class CustomerRetentionView(APIView):
         start, end, _, _ = get_date_range(request)
         customer_orders = (
             Order.objects.filter(created_at__range=(start, end), status='completed')
-            .values('customer')
+            .values('user')  # customer → user
             .annotate(order_count=Count('id'))
         )
         one_time = sum(1 for c in customer_orders if c['order_count'] == 1)
@@ -281,6 +293,13 @@ class CustomersByRoleView(APIView):
     permission_classes = [IsAdminUser]
 
     def get(self, request):
-        by_role = list(User.objects.values('role').annotate(count=Count('id')).order_by('-count'))
-        by_status = list(User.objects.values('status').annotate(count=Count('id')).order_by('-count'))
+        # No role/status fields on default User — use is_staff and is_active
+        by_role = [
+            {'role': 'admin', 'count': User.objects.filter(is_staff=True).count()},
+            {'role': 'customer', 'count': User.objects.filter(is_staff=False).count()},
+        ]
+        by_status = [
+            {'status': 'active', 'count': User.objects.filter(is_active=True).count()},
+            {'status': 'inactive', 'count': User.objects.filter(is_active=False).count()},
+        ]
         return Response({'by_role': by_role, 'by_status': by_status})

@@ -100,4 +100,4 @@ class ChangePasswordSerializer(serializers.Serializer):
         user = self.context.get('request').user
         if not user.check_password(value):
             raise serializers.ValidationError('Current password is incorrect.')
-        return value
+        return valuec

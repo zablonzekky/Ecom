@@ -30,6 +30,7 @@ class Product(models.Model):
     TYPE_CHOICES = [
         ('shoes', 'Shoes'),
         ('clothing', 'Clothing'),
+        ('accessories', 'Accessories'),
     ]
     
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='products')
@@ -80,6 +81,7 @@ class Size(models.Model):
     SIZE_TYPES = [
         ('shoes', 'Shoes'),
         ('clothing', 'Clothing'),
+        ('accessories', 'Accessories'),
     ]
     
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='sizes')
@@ -95,10 +97,18 @@ class Size(models.Model):
 
 
 class Review(models.Model):
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='reviews')
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    rating = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)])
-    comment = models.TextField()
+    STATUS_CHOICES = [
+        ('pending',  'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    ]
+
+    product    = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='reviews')
+    user       = models.ForeignKey(User, on_delete=models.CASCADE)
+    rating     = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)])
+    title      = models.CharField(max_length=200, blank=True)
+    comment    = models.TextField()
+    status     = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     

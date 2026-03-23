@@ -15,10 +15,19 @@ export default function AdminLoginPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      await login(form);
-      navigate('/dashboard');
+      const data = await login(form);
+
+      if (!['admin', 'editor'].includes(data?.user?.role)) {
+        toast.error('You do not have permission to access the admin panel.');
+        return;
+      }
+
+      navigate('/admin/dashboard');  
     } catch (err) {
-      const msg = err.response?.data?.non_field_errors?.[0] || 'Invalid credentials';
+      const msg =
+        err.response?.data?.non_field_errors?.[0] ||
+        err.response?.data?.detail ||
+        'Invalid credentials';
       toast.error(msg);
     } finally {
       setLoading(false);
@@ -32,7 +41,7 @@ export default function AdminLoginPage() {
           <div className="logo-icon">
             <Store size={28} />
           </div>
-          <h1>CE-Commerce</h1>
+          <h1>E-Commerce</h1>
           <p>Admin Dashboard</p>
         </div>
 
@@ -76,7 +85,12 @@ export default function AdminLoginPage() {
             </div>
           </div>
 
-          <button type="submit" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', marginTop: 8 }} disabled={loading}>
+          <button
+            type="submit"
+            className="btn btn-primary"
+            style={{ width: '100%', justifyContent: 'center', marginTop: 8 }}
+            disabled={loading}
+          >
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>

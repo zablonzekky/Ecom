@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Review
+from products.models import Review
 
 
 class ReviewSerializer(serializers.ModelSerializer):
@@ -10,6 +10,6 @@ class ReviewSerializer(serializers.ModelSerializer):
         model = Review
         fields = [
             'id', 'user', 'user_name', 'product', 'product_name',
-            'rating', 'title', 'body', 'status', 'created_at',
+            'rating', 'title', 'comment', 'status', 'created_at',
         ]
         read_only_fields = ['id', 'created_at']

@@ -4,68 +4,105 @@ import Layout from "../components/Layout/Layout";
 import api from "../services/api";
 import { showError, showSuccess } from "../services/toast";
 
-function RegisterPage() {
-  // const { setCurrentPage } = useAppContext();
+/* ─── Password strength ─────────────────────────────────────────────────────── */
+function PasswordStrength({ password }) {
+  if (!password) return null;
+  const checks = [
+    password.length >= 8,
+    /[A-Z]/.test(password),
+    /\d/.test(password),
+    /[^A-Za-z0-9]/.test(password),
+  ];
+  const score = checks.filter(Boolean).length;
+  const label = ["", "Weak", "Fair", "Good", "Strong"][score];
+  const color = ["", "#ef4444", "#f97316", "#3b82f6", "#16a34a"][score];
+
+  return (
+    <div className="mt-1.5 space-y-1.5">
+      <div className="flex gap-1">
+        {[0, 1, 2, 3].map((i) => (
+          <div
+            key={i}
+            className="h-1 flex-1 rounded-full transition-all duration-300"
+            style={{ backgroundColor: i < score ? color : "#e5e7eb" }}
+          />
+        ))}
+      </div>
+      {label && (
+        <p className="text-xs font-medium" style={{ color }}>
+          {label} password
+        </p>
+      )}
+    </div>
+  );
+}
+
+/* ─── Field wrapper ─────────────────────────────────────────────────────────── */
+function Field({ label, required, error, children }) {
+  return (
+    <div className="flex flex-col gap-1">
+      <label className="text-sm text-gray-800">
+        {required && <span className="text-red-500 mr-1">*</span>}
+        {label}
+      </label>
+      {children}
+      {error && <p className="text-xs text-red-500">{error}</p>}
+    </div>
+  );
+}
+
+/* ─── Main ──────────────────────────────────────────────────────────────────── */
+export default function RegisterPage() {
   const navigate = useNavigate();
   const location = useLocation();
+
   const [formData, setFormData] = useState({
-    username: "",
+    firstName: "",
+    lastName: "",
     email: "",
     password: "",
     password2: "",
-    firstName: "",
-    lastName: "",
   });
-
-  const [loading, setLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [showPw, setShowPw] = useState(false);
+  const [showPw2, setShowPw2] = useState(false);
 
-  // Input change handler
   const handleChange = (key) => (e) => {
     setFormData((s) => ({ ...s, [key]: e.target.value }));
     setFieldErrors((s) => ({ ...s, [key]: undefined }));
     setError("");
   };
 
-  // Frontend validation
   const validate = () => {
     const errs = {};
-    if (!formData.username.trim()) errs.username = "Username is required";
-    if (!formData.email.trim()) errs.email = "Email is required";
-    else if (!/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(formData.email))
-      errs.email = "Enter a valid email";
     if (!formData.firstName.trim()) errs.firstName = "First name is required";
-    if (!formData.lastName.trim()) errs.lastName = "Last name is required";
-    if (!formData.password) errs.password = "Password is required";
-    if (!formData.password2) errs.password2 = "Please confirm your password";
-    if (
-      formData.password &&
-      formData.password2 &&
-      formData.password !== formData.password2
-    )
+    if (!formData.lastName.trim())  errs.lastName  = "Last name is required";
+    if (!formData.email.trim())     errs.email     = "Email is required";
+    else if (!/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(formData.email))
+      errs.email = "Enter a valid email address";
+    if (!formData.password)         errs.password  = "Password is required";
+    else if (formData.password.length < 8)
+      errs.password = "Must be at least 8 characters";
+    if (!formData.password2)        errs.password2 = "Please confirm your password";
+    else if (formData.password !== formData.password2)
       errs.password2 = "Passwords do not match";
-    if (formData.password && formData.password.length < 8)
-      errs.password = "Password must be at least 8 characters";
-
     setFieldErrors(errs);
     return Object.keys(errs).length === 0;
   };
 
-  // Submit handler
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-
-    if (!validate()) {
-      showError("Please fix the highlighted form fields.");
-      return;
-    }
+    if (!validate()) { showError("Please fix the highlighted fields."); return; }
 
     setLoading(true);
     try {
-      const response = await api.post("/accounts/register/", {
-        username: formData.username,
+      // FIX: use the same endpoint as AppContext (/accounts/register/)
+      // FIX: api.post() returns an Axios response — don't check response.user
+      //      (that's always undefined). If no error is thrown, the request succeeded.
+      await api.post("/accounts/register/", {
         email: formData.email,
         password: formData.password,
         password2: formData.password2,
@@ -73,251 +110,164 @@ function RegisterPage() {
         last_name: formData.lastName,
       });
 
-      // if (response.user) {
-      //   // Show success toast with longer duration
-      //   toast.success("Account created successfully", {
-      //     duration: 2500,
-      //     position: "top-right",
-      //     style: {
-      //       background: "#169001ff",
-      //       color: "#fff",
-      //       padding: "16px",
-      //       fontSize: "15px",
-      //       fontWeight: "500",
-      //     },
-      //     iconTheme: {
-      //       primary: "#fff",
-      //       secondary: "#10b981",
-      //     },
-      //   });
-
-      //   // Redirect to login after toast is visible
-      //   setTimeout(() => {
-      //     navigate("/login");
-      //   }, 2000);
-      // }
-      if (response.user) {
-        // Show success toast with longer duration
-        showSuccess("Account created successfully. Please sign in.");
-
-        // Redirect to login page after registration
-        setTimeout(() => {
-          navigate("/login", { state: { from: location.state?.from } });
-        }, 2000);
-      } else {
-        setError(response.error || "Registration failed");
-        showError(response.error || "Registration failed");
-      }
+      // Reaching here means 2xx — success
+      showSuccess("Account created! Redirecting to sign in…");
+      setTimeout(
+        () => navigate("/login", { state: { from: location.state?.from } }),
+        2200
+      );
     } catch (err) {
-      if (err.response && err.response.data) {
+      if (err.response?.data) {
         const data = err.response.data;
-        const fieldErrs = {};
-
-        [
-          "username",
-          "email",
-          "password",
-          "password2",
-          "first_name",
-          "last_name",
-        ].forEach((field) => {
-          if (data[field]) {
-            fieldErrs[
-              field === "first_name"
-                ? "firstName"
-                : field === "last_name"
-                ? "lastName"
-                : field
-            ] = data[field][0];
+        const fe = {};
+        ["email", "password", "password2", "first_name", "last_name"].forEach((f) => {
+          if (data[f]) {
+            const key =
+              f === "first_name" ? "firstName" : f === "last_name" ? "lastName" : f;
+            fe[key] = Array.isArray(data[f]) ? data[f][0] : data[f];
           }
         });
-
-        if (Object.keys(fieldErrs).length > 0) {
-          setFieldErrors(fieldErrs);
-          showError("Please fix the highlighted form fields.");
-        } else if (data.detail) {
-          setError(data.detail);
-          showError(data.detail);
-        } else if (data.error) {
-          setError(data.error);
-          showError(data.error);
+        if (Object.keys(fe).length) {
+          setFieldErrors(fe);
+          showError("Please fix the highlighted fields.");
         } else {
-          const errorMsg = "Registration failed. Please check your input.";
-          setError(errorMsg);
-          showError(errorMsg);
+          const msg = data.detail || data.error || "Registration failed.";
+          setError(msg);
+          showError(msg);
         }
       } else {
-        const errorMsg = "Registration failed. Please check your input.";
-        setError(errorMsg);
-        showError(errorMsg);
+        const msg = "Registration failed. Please check your connection.";
+        setError(msg);
+        showError(msg);
       }
     } finally {
       setLoading(false);
     }
   };
 
+  const inputCls = (field) =>
+    `w-full px-3 py-2.5 rounded border text-sm text-gray-900 bg-gray-50 placeholder:text-gray-300 outline-none transition focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 ${
+      fieldErrors[field]
+        ? "border-red-400 bg-red-50 focus:border-red-400 focus:ring-red-100"
+        : "border-gray-200"
+    }`;
+
   return (
     <Layout>
-      <div className="bg-white py-8 px-4">
-        <div className="w-full max-w-2xl mx-auto">
-          <main className="w-full bg-gray-50 border border-gray-100 rounded-lg shadow-sm p-8 md:p-12">
-            <header className="mb-6 text-center">
-              <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">
-                Create your account
-              </h1>
-              <p className="text-sm text-gray-600 mt-2">or <Link to="/login" className="text-blue-700 hover:underline">sign in</Link></p>
-            </header>
+      <div className="min-h-screen flex items-center justify-center bg-white px-4 py-12">
+        <div className="w-full max-w-sm">
 
-            {error && (
-              <div
-                role="alert"
-                className="mb-4 text-sm text-red-700 bg-red-50 border border-red-100 rounded px-4 py-2"
-              >
-                {error}
-              </div>
-            )}
+          {/* Title */}
+          <h1 className="text-2xl font-bold text-gray-900 text-center mb-6">
+            Register
+          </h1>
 
-            <form
-              onSubmit={handleSubmit}
-              className="flex flex-col gap-4"
-              noValidate
-            >
-              {/* Username & Email */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <label className="flex flex-col">
-                  <span className="text-xs text-gray-700 mb-2">Username</span>
-                  <input
-                    type="text"
-                    value={formData.username}
-                    onChange={handleChange("username")}
-                    aria-invalid={!!fieldErrors.username}
-                    className="min-h-[56px] px-4 py-3 rounded-lg border border-gray-200 text-base focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-gray-300"
-                    placeholder="Enter username"
-                  />
-                  {fieldErrors.username && (
-                    <span className="mt-1 text-xs text-red-600">
-                      {fieldErrors.username}
-                    </span>
-                  )}
-                </label>
+          {/* Global error */}
+          {error && (
+            <div className="mb-4 px-3 py-2.5 rounded border border-red-200 bg-red-50 text-red-600 text-sm">
+              {error}
+            </div>
+          )}
 
-                <label className="flex flex-col">
-                  <span className="text-xs text-gray-700 mb-2">Email</span>
-                  <input
-                    type="email"
-                    value={formData.email}
-                    onChange={handleChange("email")}
-                    aria-invalid={!!fieldErrors.email}
-                    className="min-h-[56px] px-4 py-3 rounded-lg border border-gray-200 text-base focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-gray-300"
-                    placeholder="Enter email"
-                  />
-                  {fieldErrors.email && (
-                    <span className="mt-1 text-xs text-red-600">
-                      {fieldErrors.email}
-                    </span>
-                  )}
-                </label>
-              </div>
+          <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
 
-              {/* First & Last Name */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <label className="flex flex-col">
-                  <span className="text-xs text-gray-700 mb-2">First Name</span>
-                  <input
-                    type="text"
-                    value={formData.firstName}
-                    onChange={handleChange("firstName")}
-                    className="min-h-[56px] px-4 py-3 rounded-lg border border-gray-200 text-base focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-gray-300"
-                    placeholder="Enter first name"
-                  />
-                  {fieldErrors.firstName && (
-                    <span className="mt-1 text-xs text-red-600">
-                      {fieldErrors.firstName}
-                    </span>
-                  )}
-                </label>
+            {/* Name row */}
+            <div className="flex gap-3">
+              <Field label="First name" required error={fieldErrors.firstName}>
+                <input
+                  type="text"
+                  value={formData.firstName}
+                  onChange={handleChange("firstName")}
+                  placeholder="Jane"
+                  className={inputCls("firstName")}
+                />
+              </Field>
+              <Field label="Last name" required error={fieldErrors.lastName}>
+                <input
+                  type="text"
+                  value={formData.lastName}
+                  onChange={handleChange("lastName")}
+                  placeholder="Doe"
+                  className={inputCls("lastName")}
+                />
+              </Field>
+            </div>
 
-                <label className="flex flex-col">
-                  <span className="text-xs text-gray-700 mb-2">Last Name</span>
-                  <input
-                    type="text"
-                    value={formData.lastName}
-                    onChange={handleChange("lastName")}
-                    className="min-h-[56px] px-4 py-3 rounded-lg border border-gray-200 text-base focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-gray-300"
-                    placeholder="Enter last name"
-                  />
-                  {fieldErrors.lastName && (
-                    <span className="mt-1 text-xs text-red-600">
-                      {fieldErrors.lastName}
-                    </span>
-                  )}
-                </label>
-              </div>
+            {/* Email */}
+            <Field label="Email" required error={fieldErrors.email}>
+              <input
+                type="email"
+                value={formData.email}
+                onChange={handleChange("email")}
+                placeholder="jane@example.com"
+                className={inputCls("email")}
+              />
+            </Field>
 
-              {/* Password & Confirm Password */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <label className="flex flex-col">
-                  <span className="text-xs text-gray-700 mb-2">Password</span>
-                  <input
-                    type="password"
-                    value={formData.password}
-                    onChange={handleChange("password")}
-                    className="min-h-[56px] px-4 py-3 rounded-lg border border-gray-200 text-base focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-gray-300"
-                    placeholder="At least 8 characters"
-                  />
-                  {fieldErrors.password && (
-                    <span className="mt-1 text-xs text-red-600">
-                      {fieldErrors.password}
-                    </span>
-                  )}
-                </label>
-
-                <label className="flex flex-col">
-                  <span className="text-xs text-gray-700 mb-2">
-                    Confirm Password
-                  </span>
-                  <input
-                    type="password"
-                    value={formData.password2}
-                    onChange={handleChange("password2")}
-                    className="min-h-[56px] px-4 py-3 rounded-lg border border-gray-200 text-base focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-gray-300"
-                    placeholder="Re-enter password"
-                  />
-                  {fieldErrors.password2 && (
-                    <span className="mt-1 text-xs text-red-600">
-                      {fieldErrors.password2}
-                    </span>
-                  )}
-                </label>
-              </div>
-
-              {/* Submit button */}
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-6">
+            {/* Password */}
+            <Field label="Password" required error={fieldErrors.password}>
+              <div className="relative">
+                <input
+                  type={showPw ? "text" : "password"}
+                  value={formData.password}
+                  onChange={handleChange("password")}
+                  placeholder="Min. 8 characters"
+                  className={`${inputCls("password")} pr-14`}
+                />
                 <button
-                  type="submit"
-                  disabled={loading}
-                  className="inline-flex items-center justify-center w-full sm:w-auto px-6 py-3 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 hover:scale-[1.01] transition disabled:opacity-60 focus:ring-4 focus:ring-blue-300"
+                  type="button"
+                  onClick={() => setShowPw((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 hover:text-gray-600 transition-colors"
                 >
-                  {loading ? "Creating..." : "Create account"}
+                  {showPw ? "Hide" : "Show"}
                 </button>
-
-                <div className="text-sm text-gray-600 text-center">
-                  Already have an account?{" "}
-                  <button
-                    type="button"
-                    onClick={() => navigate("/login")}
-                    className="text-blue-600 hover:text-blue-800 font-semibold"
-                  >
-                    Sign in
-                  </button>
-                </div>
               </div>
-            </form>
-          </main>
+              <PasswordStrength password={formData.password} />
+            </Field>
+
+            {/* Confirm password */}
+            <Field label="Confirm password" required error={fieldErrors.password2}>
+              <div className="relative">
+                <input
+                  type={showPw2 ? "text" : "password"}
+                  value={formData.password2}
+                  onChange={handleChange("password2")}
+                  placeholder="Re-enter password"
+                  className={`${inputCls("password2")} pr-14`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPw2((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  {showPw2 ? "Hide" : "Show"}
+                </button>
+              </div>
+            </Field>
+
+            {/* Divider */}
+            <hr className="border-gray-100 my-1" />
+
+            {/* Submit */}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-2.5 rounded bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-sm font-semibold transition disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {loading ? "Creating account…" : "Register"}
+            </button>
+
+            {/* Sign in link */}
+            <p className="text-center text-sm text-gray-500">
+              Already have an account?{" "}
+              <Link to="/login" className="text-blue-600 hover:underline font-medium">
+                Sign in
+              </Link>
+            </p>
+
+          </form>
         </div>
       </div>
     </Layout>
   );
 }
-
-export default RegisterPage;

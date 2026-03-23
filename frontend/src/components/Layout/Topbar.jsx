@@ -21,7 +21,7 @@ export default function Topbar() {
 
   const handleLogout = async () => {
     await logout();
-    navigate('/login');
+    navigate('admin/login');
   };
 
   const initials = user
@@ -43,7 +43,7 @@ export default function Topbar() {
       <div className="topbar-actions">
         <button
           className="btn-icon notif-btn"
-          onClick={() => navigate('/notifications')}
+          onClick={() => navigate('admin/notifications')}
         >
           <Bell size={18} />
           <span className="notif-dot" />
@@ -68,10 +68,10 @@ export default function Topbar() {
                 <div className="dropdown-email">{user?.email}</div>
               </div>
               <div className="dropdown-divider" />
-              <button className="dropdown-item" onClick={() => { navigate('/settings'); setMenuOpen(false); }}>
+              <button className="dropdown-item" onClick={() => { navigate('admin/settings'); setMenuOpen(false); }}>
                 <User size={15} /> Profile
               </button>
-              <button className="dropdown-item" onClick={() => { navigate('/settings'); setMenuOpen(false); }}>
+              <button className="dropdown-item" onClick={() => { navigate('admin/settings'); setMenuOpen(false); }}>
                 <Settings size={15} /> Settings
               </button>
               <div className="dropdown-divider" />

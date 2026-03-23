@@ -7,18 +7,18 @@ from datetime import timedelta
 from django.db.models import Sum
 
 from admin_app.permissions import IsAdminUser
-from .models import Order, Refund, OrderTimeline
+from orders.models import Order, OrderTimeline, Refund
 from .serializers import (
     OrderSerializer, OrderCreateSerializer, OrderUpdateStatusSerializer, RefundSerializer
 )
 
 
 class OrderViewSet(viewsets.ModelViewSet):
-    queryset = Order.objects.select_related('customer').prefetch_related('items', 'timeline')
+    queryset = Order.objects.select_related('user', 'address').prefetch_related('items', 'timeline')
     permission_classes = [IsAdminUser]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['status']
-    search_fields = ['order_id', 'customer__email', 'customer__first_name', 'customer__last_name']
+    search_fields = ['order_number', 'user__email', 'user__first_name', 'user__last_name']
     ordering_fields = ['created_at', 'total']
     ordering = ['-created_at']
 
@@ -54,7 +54,7 @@ class OrderViewSet(viewsets.ModelViewSet):
 
         revenue_yesterday = Order.objects.filter(
             created_at__date=yesterday, status__in=['completed', 'shipped']
-        ).aggregate(total=Sum('total'))['total'] or 1  # avoid division by zero
+        ).aggregate(total=Sum('total'))['total'] or 1
 
         revenue_change = ((revenue_today - revenue_yesterday) / revenue_yesterday) * 100
 
@@ -70,7 +70,10 @@ class OrderViewSet(viewsets.ModelViewSet):
             'revenue_sales': float(revenue_sales),
         })
 
-    @action(detail=True, methods=['post'])
+    # FIX: added url_path='update-status' (hyphen) to match the frontend call
+    # Without this, DRF auto-generates the URL as /update_status/ (underscore)
+    # which caused the 404 — frontend was calling /update-status/ (hyphen)
+    @action(detail=True, methods=['post'], url_path='update-status')
     def update_status(self, request, pk=None):
         order = self.get_object()
         serializer = OrderUpdateStatusSerializer(data=request.data)
@@ -83,16 +86,23 @@ class OrderViewSet(viewsets.ModelViewSet):
         OrderTimeline.objects.create(
             order=order,
             status=order.status,
-            note=serializer.validated_data.get('note', f'Status changed from {old_status} to {order.status}'),
+            note=serializer.validated_data.get(
+                'note',
+                f'Status changed from {old_status} to {order.status}'
+            ),
             created_by=request.user,
         )
         return Response(OrderSerializer(order).data)
 
-    @action(detail=True, methods=['post'])
+    # FIX: added url_path='refund' explicitly for consistency
+    @action(detail=True, methods=['post'], url_path='refund')
     def refund(self, request, pk=None):
         order = self.get_object()
         if hasattr(order, 'refund'):
-            return Response({'error': 'Refund already exists'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {'error': 'Refund already exists'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         serializer = RefundSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -103,7 +113,7 @@ class OrderViewSet(viewsets.ModelViewSet):
 
 
 class RefundViewSet(viewsets.ModelViewSet):
-    queryset = Refund.objects.select_related('order', 'order__customer')
+    queryset = Refund.objects.select_related('order', 'order__user')
     serializer_class = RefundSerializer
     permission_classes = [IsAdminUser]
     filter_backends = [DjangoFilterBackend]

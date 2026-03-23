@@ -3,7 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from admin_app.permissions import IsAdminUser
-from .models import Review
+from products.models import Review
 from .serializers import ReviewSerializer
 
 
@@ -13,7 +13,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAdminUser]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_fields = ['status', 'rating']
-    search_fields = ['user__email', 'product__name', 'body']
+    search_fields = ['user__email', 'product__name', 'comment']
 
     @action(detail=True, methods=['post'])
     def approve(self, request, pk=None):

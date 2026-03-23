@@ -46,6 +46,11 @@ class SizeSerializer(serializers.ModelSerializer):
         model = Size
         fields = ['id', 'size_type', 'value', 'stock']
 
+    def validate_stock(self, value):
+        if value < 0:
+            raise serializers.ValidationError("Stock cannot be negative.")
+        return value
+
 
 # Review Serializer
 class ReviewSerializer(serializers.ModelSerializer):
@@ -80,7 +85,7 @@ class ProductListSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         primary = obj.images.filter(is_primary=True).first()
 
-        if not primary:  # fallback: first image
+        if not primary:
             primary = obj.images.first()
 
         if primary:

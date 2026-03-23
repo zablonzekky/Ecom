@@ -5,7 +5,8 @@ import { orderService } from '../../services';
 import { StatusBadge, LoadingState, Pagination, Modal, EmptyState } from '../../components/common';
 import toast from 'react-hot-toast';
 
-const STATUSES = ['', 'pending', 'processing', 'shipped', 'completed', 'cancelled', 'refunded'];
+// Must match Order.STATUS_CHOICES in orders/models.py exactly
+const STATUSES = ['', 'pending', 'processing', 'shipped', 'delivered', 'completed', 'cancelled', 'refunded'];
 const DATE_RANGES = [
   { label: 'All Time', value: '' },
   { label: 'Today', value: 'today' },
@@ -30,9 +31,9 @@ function OrderTimeline({ timeline }) {
             {icons[event.status] || '📌'}
           </div>
           <div>
-            <div style={{ fontWeight: 600, fontSize: 14, textTransform: 'capitalize' }}>{event.status}</div>
+            <div style={{ fontWeight: 600, fontSize: 14, textTransform: 'capitalize' }}>{event.status ?? '—'}</div>
             <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-              {new Date(event.created_at).toLocaleString()}
+              {event.created_at ? new Date(event.created_at).toLocaleString() : '—'}
             </div>
             {event.note && <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>{event.note}</div>}
           </div>
@@ -51,7 +52,10 @@ function UpdateStatusModal({ order, onClose, onUpdate }) {
     e.preventDefault();
     setLoading(true);
     try {
-      await orderService.updateStatus(order.id, { status, note });
+      // order.id is the integer DB primary key — used in the URL
+      // order.order_number (e.g. "ORD-0001") is display only, never used as URL pk
+      const pk = order.id;
+      await orderService.updateStatus(pk, { status, note });
       toast.success('Status updated');
       onUpdate();
       onClose();
@@ -119,8 +123,12 @@ export default function OrdersPage() {
   useEffect(() => { fetchOrders(); }, [fetchOrders]);
 
   useEffect(() => {
-    orderService.stats().then(r => setStats(r.data)).catch(() => {});
+    orderService.stats().then(r => setStats(r.data || {})).catch(() => {});
   }, []);
+
+  // Safe number helpers — prevent NaN from crashing the render
+  const n = (val) => Number(val) || 0;
+  const money = (val) => n(val).toFixed(2);
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 280px', gap: 24 }}>
@@ -129,26 +137,26 @@ export default function OrdersPage() {
         <div className="grid-4 mb-6">
           <div className="stat-card">
             <div className="stat-icon"><ShoppingCart size={20} /></div>
-            <div className="stat-value">{stats.total_orders?.toLocaleString() || 0}</div>
+            <div className="stat-value">{n(stats.total_orders).toLocaleString()}</div>
             <div className="stat-label">Total Orders</div>
           </div>
           <div className="stat-card">
             <div className="stat-icon"><Clock size={20} /></div>
-            <div className="stat-value">{stats.pending || 0}</div>
+            <div className="stat-value">{n(stats.pending)}</div>
             <div className="stat-label">Pending</div>
             <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>Avg wait: 2 hrs</div>
           </div>
           <div className="stat-card">
             <div className="stat-icon"><DollarSign size={20} /></div>
-            <div className="stat-value">${stats.revenue_today?.toFixed(2) || '0.00'}</div>
+            <div className="stat-value">${money(stats.revenue_today)}</div>
             <div className="stat-label">Revenue Today</div>
             <div style={{ fontSize: 12, color: 'var(--success)', marginTop: 4 }}>
-              {stats.revenue_change_percent > 0 ? '+' : ''}{stats.revenue_change_percent}% vs yesterday
+              {n(stats.revenue_change_percent) > 0 ? '+' : ''}{n(stats.revenue_change_percent)}% vs yesterday
             </div>
           </div>
           <div className="stat-card">
             <div className="stat-icon"><TrendingUp size={20} /></div>
-            <div className="stat-value">${stats.revenue_sales?.toFixed(2) || '0.00'}</div>
+            <div className="stat-value">${money(stats.revenue_sales)}</div>
             <div className="stat-label">Revenue Sales</div>
           </div>
         </div>
@@ -197,20 +205,29 @@ export default function OrdersPage() {
                   {orders.map(order => (
                     <tr key={order.id}>
                       <td><input type="checkbox" /></td>
-                      <td style={{ fontFamily: 'DM Mono, monospace', fontSize: 12, fontWeight: 600 }}>{order.order_id}</td>
+                      <td style={{ fontFamily: 'DM Mono, monospace', fontSize: 12, fontWeight: 600 }}>
+                        {/* order_number is the human-readable field e.g. "ORD-0001" */}
+                        {order.order_number ?? '—'}
+                      </td>
                       <td>
                         <div className="flex items-center gap-2">
                           <div className="avatar-placeholder" style={{ width: 28, height: 28, fontSize: 11 }}>
-                            {order.customer_name?.[0] || '?'}
+                            {order.customer_name?.[0] ?? '?'}
                           </div>
-                          <span style={{ fontSize: 13 }}>{order.customer_name}</span>
+                          <span style={{ fontSize: 13 }}>{order.customer_name ?? '—'}</span>
                         </div>
                       </td>
-                      <td>{order.item_count} {order.item_count === 1 ? 'item' : 'items'}</td>
-                      <td style={{ fontWeight: 600 }}>${parseFloat(order.total).toFixed(2)}</td>
-                      <td><StatusBadge status={order.status} /></td>
+                      <td>{n(order.item_count)} {n(order.item_count) === 1 ? 'item' : 'items'}</td>
+                      <td style={{ fontWeight: 600 }}>${money(order.total)}</td>
+                      <td>
+                        {/* FIX: normalise status to lowercase so StatusBadge always
+                            receives a value it can match regardless of API casing */}
+                        <StatusBadge status={(order.status ?? 'pending').toLowerCase()} />
+                      </td>
                       <td style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                        {new Date(order.created_at).toLocaleString('en', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                        {order.created_at
+                          ? new Date(order.created_at).toLocaleString('en', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+                          : '—'}
                       </td>
                       <td>
                         <div className="flex gap-2">
@@ -232,12 +249,16 @@ export default function OrdersPage() {
         </div>
       </div>
 
-      {/* Right Panel: Timeline + High Value */}
+      {/* Right Panel */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
         <div className="card">
           <div className="card-header">
             <h3 style={{ fontSize: 14, fontWeight: 600 }}>Order Tracking Timeline</h3>
-            {viewOrder && <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Selected {viewOrder.order_id}</div>}
+            {viewOrder && (
+              <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                Selected {viewOrder.order_number ?? '—'}
+              </div>
+            )}
           </div>
           <div className="card-body" style={{ paddingTop: 12 }}>
             {viewOrder?.timeline?.length > 0
@@ -259,11 +280,17 @@ export default function OrdersPage() {
                 </tr>
               </thead>
               <tbody>
-                {orders.filter(o => parseFloat(o.total) > 300).slice(0, 5).map(o => (
+                {orders.filter(o => n(o.total) > 300).slice(0, 5).map(o => (
                   <tr key={o.id}>
-                    <td style={{ fontFamily: 'DM Mono, monospace', fontSize: 11 }}>{o.order_id.replace('#ODR-', '')}</td>
-                    <td style={{ fontSize: 12 }}>{o.customer_name}</td>
-                    <td><StatusBadge status={o.status} /></td>
+                    <td style={{ fontFamily: 'DM Mono, monospace', fontSize: 11 }}>
+                      {/* strip prefix for compact display e.g. "ORD-0001" → "0001" */}
+                      {(o.order_number ?? '').replace(/^[A-Z]+-/, '') || '—'}
+                    </td>
+                    <td style={{ fontSize: 12 }}>{o.customer_name ?? '—'}</td>
+                    <td>
+                      {/* FIX: normalise status casing here too */}
+                      <StatusBadge status={(o.status ?? 'pending').toLowerCase()} />
+                    </td>
                   </tr>
                 ))}
               </tbody>

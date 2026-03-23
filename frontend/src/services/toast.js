@@ -11,12 +11,12 @@ export const showSuccess = (message) =>
   toast.success(message, {
     duration: 2500,
     position: "top-right",
-    style: { ...baseStyle, background: "#166534", color: "#ffffff" },
+    style: { ...baseStyle, background: "#05b749", color: "#ffffff" },
   });
 
 export const showError = (message) =>
   toast.error(message, {
     duration: 4000,
     position: "top-right",
-    style: { ...baseStyle, background: "#991b1b", color: "#ffffff" },
+    style: { ...baseStyle, background: "#cd1919", color: "#ffffff" },
   });

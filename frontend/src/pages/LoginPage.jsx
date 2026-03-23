@@ -12,7 +12,7 @@ const BG_IMAGES = [
 
 function LoginPage() {
   const { login } = useAppContext();
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");           // ✅ renamed from username → email
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -23,7 +23,6 @@ function LoginPage() {
 
   const from = location.state?.from?.pathname || "/";
 
-  // Auto-advance background every 5 seconds
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentBg((prev) => (prev + 1) % BG_IMAGES.length);
@@ -31,14 +30,14 @@ function LoginPage() {
     return () => clearInterval(interval);
   }, []);
 
-  const canSubmit = username.trim().length > 0 && password.length > 0 && !loading;
+  const canSubmit = email.trim().length > 0 && password.length > 0 && !loading;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setFormError("");
 
-    if (!username.trim() || !password) {
-      const msg = "Please enter both username and password.";
+    if (!email.trim() || !password) {
+      const msg = "Please enter both email and password."; // ✅ fixed message
       setFormError(msg);
       showError(msg);
       return;
@@ -49,17 +48,14 @@ function LoginPage() {
       const response = await fetch("http://localhost:8000/api/auth/token/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: username.trim(), password }),
+        body: JSON.stringify({ email: email.trim(), password }), // ✅ fixed: email instead of username
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        localStorage.setItem("access_token", data.access);
-        localStorage.setItem("refresh_token", data.refresh);
-        sessionStorage.setItem("access_token", data.access);
-
-        await login(username.trim(), password);
+        // ✅ Removed duplicate token storage — login() in AppContext handles this
+        await login(email.trim(), password);
         showSuccess("Login successful.");
         setTimeout(() => navigate(from, { replace: true }), 2000);
       } else {
@@ -237,19 +233,21 @@ function LoginPage() {
 
                   {/* Form */}
                   <form onSubmit={handleSubmit} noValidate>
+
+                    {/* ✅ FIXED: Email field (was "username") */}
                     <div className="mb-3">
-                      <label htmlFor="username" className="form-label fw-semibold text-dark mb-1 small">
-                        Username
+                      <label htmlFor="email" className="form-label fw-semibold text-dark mb-1 small">
+                        Email Address
                       </label>
                       <input
-                        id="username"
-                        type="text"
+                        id="email"
+                        type="email"                    // ✅ type="email" (was "text")
                         required
-                        autoComplete="username"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
+                        autoComplete="email"            // ✅ correct autocomplete
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
                         className="form-control py-2"
-                        placeholder="Enter your username"
+                        placeholder="Enter your email address"
                         disabled={loading}
                       />
                     </div>
