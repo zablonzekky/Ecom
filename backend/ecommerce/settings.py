@@ -23,7 +23,8 @@ SECRET_KEY = os.getenv(
 DEBUG = True
 ALLOWED_HOSTS = os.getenv(
     "ALLOWED_HOSTS",
-    "localhost,127.0.0.1"
+    "localhost,127.0.0.1",
+    "https://ecombay.onrender.com",
 ).split(",")
 
 # =======================
@@ -78,10 +79,10 @@ SITE_ID = 1
 # Middleware
 # =======================
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",        # <-- move to TOP
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
-    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -90,7 +91,6 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "ecommerce.middleware.RequestLogMiddleware",
 ]
-
 ROOT_URLCONF = "ecommerce.urls"
 WSGI_APPLICATION = "ecommerce.wsgi.application"
 
@@ -264,7 +264,8 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # =======================
 CORS_ALLOWED_ORIGINS = os.getenv(
     "CORS_ALLOWED_ORIGINS",
-    "http://localhost:3000,http://127.0.0.1:8000"
+    "http://localhost:3000,http://127.0.0.1:8000",
+    "https://ecombay.onrender.com"
 ).split(",")
 
 CORS_ALLOW_CREDENTIALS = True
