@@ -14,7 +14,7 @@ gunicorn==23.0.0
 idna==3.10
 packaging==24.2
 phonenumbers==8.13.26
-Pillow==10.3.0
+Pillow==11.1.0
 # psycopg2-binary==2.9.10   # uncomment only after installing PostgreSQL
 PyJWT==2.10.1
 python-decouple==3.8
