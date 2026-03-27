@@ -7,7 +7,7 @@ def delete_orphaned_tokens(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('token_blacklist', '0003_auto_20171017_2007'),
+        ('token_blacklist', '0001_initial'),
     ]
 
     operations = [
