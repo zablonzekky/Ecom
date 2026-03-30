@@ -1,11 +1,12 @@
 import axios from 'axios';
 
-export const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
+export const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
 export const axiosInstance = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: `${API_BASE_URL}/api`,
   headers: { 'Content-Type': 'application/json' },
 });
+
 axiosInstance.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('access_token');
@@ -24,7 +25,7 @@ axiosInstance.interceptors.response.use(
       try {
         const refresh = localStorage.getItem('refresh_token');
         if (!refresh) throw new Error('No refresh token');
-        const { data } = await axios.post(`${API_BASE_URL}/auth/token/refresh/`, { refresh });
+        const { data } = await axios.post(`${API_BASE_URL}/api/auth/token/refresh/`, { refresh });
         localStorage.setItem('access_token', data.access);
         original.headers.Authorization = `Bearer ${data.access}`;
         return axiosInstance(original);
@@ -42,7 +43,7 @@ axiosInstance.interceptors.response.use(
 export async function refreshAccessToken() {
   const refresh = localStorage.getItem('refresh_token');
   if (!refresh) throw new Error('No refresh token available');
-  const { data } = await axios.post(`${API_BASE_URL}/auth/token/refresh/`, { refresh });
+  const { data } = await axios.post(`${API_BASE_URL}/api/auth/token/refresh/`, { refresh });
   localStorage.setItem('access_token', data.access);
   return data.access;
 }
