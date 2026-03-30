@@ -12,7 +12,7 @@ const BG_IMAGES = [
 
 function LoginPage() {
   const { login } = useAppContext();
-  const [email, setEmail] = useState("");           // ✅ renamed from username → email
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -37,7 +37,7 @@ function LoginPage() {
     setFormError("");
 
     if (!email.trim() || !password) {
-      const msg = "Please enter both email and password."; // ✅ fixed message
+      const msg = "Please enter both email and password.";
       setFormError(msg);
       showError(msg);
       return;
@@ -45,24 +45,9 @@ function LoginPage() {
 
     setLoading(true);
     try {
-      const response = await fetch("http://localhost:8000/api/auth/token/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim(), password }), // ✅ fixed: email instead of username
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        // ✅ Removed duplicate token storage — login() in AppContext handles this
-        await login(email.trim(), password);
-        showSuccess("Login successful.");
-        setTimeout(() => navigate(from, { replace: true }), 2000);
-      } else {
-        const msg = data.detail || "Invalid credentials.";
-        setFormError(msg);
-        showError(msg);
-      }
+      await login(email.trim(), password);
+      showSuccess("Login successful.");
+      setTimeout(() => navigate(from, { replace: true }), 2000);
     } catch (err) {
       const msg = err.message || "Login failed. Please try again.";
       setFormError(msg);
@@ -73,11 +58,11 @@ function LoginPage() {
   };
 
   const handleGoogleLogin = () => {
-    window.location.href = "http://localhost:8000/api/accounts/auth/google/";
+    window.location.href = `${process.env.REACT_APP_API_URL || "http://localhost:8000"}/api/accounts/auth/google/`;
   };
 
   const handleFacebookLogin = () => {
-    window.location.href = "http://localhost:8000/api/accounts/auth/facebook/";
+    window.location.href = `${process.env.REACT_APP_API_URL || "http://localhost:8000"}/api/accounts/auth/facebook/`;
   };
 
   return (
@@ -92,28 +77,18 @@ function LoginPage() {
           opacity: 0;
           transition: opacity 1s ease-in-out;
         }
-        .login-bg-slide.active {
-          opacity: 1;
-        }
+        .login-bg-slide.active { opacity: 1; }
         .bg-dot-btn {
-          width: 8px;
-          height: 8px;
-          border-radius: 50%;
-          background: rgba(255,255,255,0.45);
-          border: none;
-          padding: 0;
-          cursor: pointer;
+          width: 8px; height: 8px; border-radius: 50%;
+          background: rgba(255,255,255,0.45); border: none;
+          padding: 0; cursor: pointer;
           transition: background 0.3s, transform 0.3s;
         }
-        .bg-dot-btn.active {
-          background: #fff;
-          transform: scale(1.3);
-        }
+        .bg-dot-btn.active { background: #fff; transform: scale(1.3); }
       `}</style>
 
       <div className="min-vh-100 d-flex align-items-center justify-content-center p-3 position-relative overflow-hidden">
 
-        {/* Background slider layers */}
         {BG_IMAGES.map((img, i) => (
           <div
             key={img}
@@ -124,7 +99,6 @@ function LoginPage() {
           />
         ))}
 
-        {/* Dot indicators */}
         <div
           className="position-absolute bottom-0 start-50 translate-middle-x d-flex gap-2 pb-3"
           style={{ zIndex: 2 }}
@@ -139,7 +113,6 @@ function LoginPage() {
           ))}
         </div>
 
-        {/* Login card */}
         <div className="container-fluid position-relative" style={{ zIndex: 1 }}>
           <div className="row justify-content-center">
             <div className="col-12 col-sm-11 col-md-9 col-lg-7 col-xl-5 col-xxl-4">
@@ -152,14 +125,12 @@ function LoginPage() {
               >
                 <div className="card-body p-4">
 
-                  {/* Header */}
                   <div className="text-center mb-3">
                     <div className="mb-2">
                       <div
                         className="d-inline-flex align-items-center justify-content-center rounded-circle"
                         style={{
-                          width: "56px",
-                          height: "56px",
+                          width: "56px", height: "56px",
                           background: "linear-gradient(135deg, #FF6B6B 0%, #FFE66D 100%)",
                         }}
                       >
@@ -178,12 +149,9 @@ function LoginPage() {
                     >
                       Welcome Back
                     </h2>
-                    <p className="text-muted mb-0 small">
-                      Sign in to your account to continue
-                    </p>
+                    <p className="text-muted mb-0 small">Sign in to your account to continue</p>
                   </div>
 
-                  {/* Social Login */}
                   <div className="row g-2 mb-3">
                     <div className="col-6">
                       <button
@@ -215,7 +183,6 @@ function LoginPage() {
                     </div>
                   </div>
 
-                  {/* Divider */}
                   <div className="position-relative text-center mb-3">
                     <hr className="my-2" />
                     <span className="position-absolute top-50 start-50 translate-middle bg-white px-2 text-muted small">
@@ -223,7 +190,6 @@ function LoginPage() {
                     </span>
                   </div>
 
-                  {/* Error Alert */}
                   {formError && (
                     <div className="alert alert-danger d-flex align-items-center py-2 mb-3 small" role="alert">
                       <i className="fas fa-exclamation-circle me-2"></i>
@@ -231,19 +197,16 @@ function LoginPage() {
                     </div>
                   )}
 
-                  {/* Form */}
                   <form onSubmit={handleSubmit} noValidate>
-
-                    {/* ✅ FIXED: Email field (was "username") */}
                     <div className="mb-3">
                       <label htmlFor="email" className="form-label fw-semibold text-dark mb-1 small">
                         Email Address
                       </label>
                       <input
                         id="email"
-                        type="email"                    // ✅ type="email" (was "text")
+                        type="email"
                         required
-                        autoComplete="email"            // ✅ correct autocomplete
+                        autoComplete="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         className="form-control py-2"
@@ -313,7 +276,6 @@ function LoginPage() {
                     </div>
                   </form>
 
-                  {/* Register Link */}
                   <div className="text-center">
                     <p className="mb-0 text-muted small">
                       Don&apos;t have an account?{" "}
