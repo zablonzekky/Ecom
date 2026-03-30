@@ -14,6 +14,15 @@ const CLOTHING_SIZES   = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
 const SHOE_SIZES       = ['36', '37', '38', '39', '40', '41', '42', '43', '44', '45'];
 const DEFAULT_COLORS   = ['Red', 'Blue', 'Green', 'Black', 'White', 'Yellow'];
 
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+
+const getImageUrl = (path) => {
+  if (!path) return null;
+  if (path.startsWith('http')) return path;
+  if (path.startsWith('/media')) return `${API_URL}${path}`;
+  return `${API_URL}/media/${path}`;
+};
+
 export default function CreateProduct() {
   const navigate  = useNavigate();
   const location  = useLocation();
@@ -42,7 +51,9 @@ export default function CreateProduct() {
   const [selectedSizes,  setSelectedSizes]  = useState(initial?.sizes?.map(v => v.value).filter(Boolean) || []);
   const [selectedColors, setSelectedColors] = useState([]);
   const [imageFile,      setImageFile]      = useState(null);
-  const [imagePreview,   setImagePreview]   = useState(initial?.images?.[0]?.image || initial?.image || null);
+  const [imagePreview,   setImagePreview]   = useState(
+    getImageUrl(initial?.images?.[0]?.image || initial?.image)
+  );
 
   useEffect(() => {
     productService.categories()
@@ -64,12 +75,11 @@ export default function CreateProduct() {
       const fd = new FormData();
       Object.entries(form).forEach(([k, v]) => {
         if (v === '') return;
-        if (k === 'status')     fd.append('is_active', v === 'active' ? 'true' : 'false');
+        if (k === 'status')          fd.append('is_active', v === 'active' ? 'true' : 'false');
         else if (k === 'sale_price') fd.append('discount_price', v);
         else fd.append(k, v);
       });
 
-      // Auto-generate slug from name
       const slug = form.name.toLowerCase().trim()
         .replace(/[^a-z0-9\s-]/g, '')
         .replace(/\s+/g, '-')
@@ -78,7 +88,6 @@ export default function CreateProduct() {
 
       if (imageFile) fd.append('image', imageFile);
 
-      // Sizes — skip for accessories
       if (!NO_SIZE_TYPES.includes(form.product_type) && selectedSizes.length > 0) {
         selectedSizes.forEach((s, i) => {
           fd.append(`sizes[${i}]size_type`, form.product_type);
@@ -242,13 +251,18 @@ export default function CreateProduct() {
                 background: 'var(--surface-2)', transition: 'border-color 0.2s',
               }}>
                 {imagePreview
-                  ? <img src={imagePreview} alt="" style={{ maxHeight: 90, maxWidth: '100%', borderRadius: 6 }} />
+                  ? <img
+                      src={imagePreview}
+                      alt=""
+                      style={{ maxHeight: 90, maxWidth: '100%', borderRadius: 6, objectFit: 'cover' }}
+                      onError={(e) => { e.target.onerror = null; setImagePreview(null); }}
+                    />
                   : <>
-                    <Upload size={24} color="var(--text-muted)" />
-                    <span style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 8, textAlign: 'center' }}>
-                      Click or drag to upload
-                    </span>
-                  </>
+                      <Upload size={24} color="var(--text-muted)" />
+                      <span style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 8, textAlign: 'center' }}>
+                        Click or drag to upload
+                      </span>
+                    </>
                 }
                 <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleImageChange} />
               </label>
