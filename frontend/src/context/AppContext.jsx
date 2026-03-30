@@ -21,7 +21,8 @@ export const AppProvider = ({ children }) => {
   const [currentCategory, setCurrentCategory] = useState(null);
   const [userAddresses, setUserAddresses] = useState([]);
 
-  // ─── Helper: parse JSON or throw readable error ───────────────────────────
+  const BASE = `${API_BASE_URL}/api`;
+
   const handleApiResponse = async (response) => {
     const contentType = response.headers.get("content-type");
     if (!contentType || !contentType.includes("application/json")) {
@@ -34,12 +35,11 @@ export const AppProvider = ({ children }) => {
     return response.json();
   };
 
-  // ─── Address Functions ────────────────────────────────────────────────────
   const fetchUserAddresses = useCallback(async () => {
     try {
       const token = localStorage.getItem("access_token");
       if (!token) return;
-      const response = await fetch(`${API_BASE_URL}/orders/addresses/`, {
+      const response = await fetch(`${BASE}/orders/addresses/`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (response.ok) {
@@ -49,13 +49,13 @@ export const AppProvider = ({ children }) => {
     } catch (error) {
       console.error("Failed to fetch addresses:", error);
     }
-  }, []);
+  }, [BASE]);
 
   const createAddress = async (addressData) => {
     try {
       const token = localStorage.getItem("access_token");
       if (!token) throw new Error("Authentication required");
-      const response = await fetch(`${API_BASE_URL}/orders/addresses/`, {
+      const response = await fetch(`${BASE}/orders/addresses/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -78,12 +78,11 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  // ─── Order Functions ──────────────────────────────────────────────────────
   const fetchUserOrders = useCallback(async () => {
     try {
       const token = localStorage.getItem("access_token");
       if (!token) return;
-      const response = await fetch(`${API_BASE_URL}/orders/`, {
+      const response = await fetch(`${BASE}/orders/`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (response.ok) {
@@ -93,9 +92,8 @@ export const AppProvider = ({ children }) => {
     } catch (error) {
       console.error("Failed to fetch orders:", error);
     }
-  }, []);
+  }, [BASE]);
 
-  // ─── Bootstrap — restore session on load ─────────────────────────────────
   useEffect(() => {
     const token = localStorage.getItem("access_token");
     const userData = localStorage.getItem("user_data");
@@ -115,7 +113,6 @@ export const AppProvider = ({ children }) => {
     setIsLoading(false);
   }, [fetchUserOrders, fetchUserAddresses]);
 
-  // ─── Fetch Products ───────────────────────────────────────────────────────
   const fetchProductsByCategory = async (categorySlug) => {
     try {
       setIsLoading(true);
@@ -146,7 +143,6 @@ export const AppProvider = ({ children }) => {
     fetchAll();
   }, []);
 
-  // ─── Cart Functions ───────────────────────────────────────────────────────
   const addToCart = (product, size, quantity = 1) => {
     const existingItemIndex = cart.findIndex(
       (item) => item.id === product.id && item.selectedSize === size
@@ -189,7 +185,6 @@ export const AppProvider = ({ children }) => {
   const getCartItemsCount = () =>
     cart.reduce((count, item) => count + item.quantity, 0);
 
-  // ─── Order Actions ────────────────────────────────────────────────────────
   const placeOrder = async (orderData) => {
     try {
       const token = localStorage.getItem("access_token");
@@ -200,7 +195,7 @@ export const AppProvider = ({ children }) => {
         items: orderData.items,
         notes: orderData.notes || "",
       };
-      const response = await fetch(`${API_BASE_URL}/orders/`, {
+      const response = await fetch(`${BASE}/orders/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -232,11 +227,10 @@ export const AppProvider = ({ children }) => {
     );
   };
 
-  // ─── Auth Functions ───────────────────────────────────────────────────────
   const login = async (email, password) => {
     try {
       setIsLoading(true);
-      const response = await fetch(`${API_BASE_URL}/auth/token/`, {
+      const response = await fetch(`${BASE}/auth/token/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -247,18 +241,15 @@ export const AppProvider = ({ children }) => {
       localStorage.setItem("access_token", data.access);
       localStorage.setItem("refresh_token", data.refresh);
 
-      // Fetch real user profile; fall back to email only
       let userData = null;
       try {
-        const profileResponse = await fetch(`${API_BASE_URL}/auth/profile/`, {
+        const profileResponse = await fetch(`${BASE}/auth/profile/`, {
           headers: { Authorization: `Bearer ${data.access}` },
         });
         if (profileResponse.ok) {
           userData = await handleApiResponse(profileResponse);
         }
-      } catch (_) {
-        // profile endpoint may not exist yet
-      }
+      } catch (_) {}
 
       if (!userData) {
         userData = { email, token: data.access, refreshToken: data.refresh };
@@ -290,12 +281,10 @@ export const AppProvider = ({ children }) => {
     setUserAddresses([]);
   };
 
-  // FIX: was calling /auth/register/ which doesn't exist in urls.py
-  // Now correctly calls /accounts/register/ — the same endpoint RegisterPage uses
   const register = async (email, password, name) => {
     try {
       setIsLoading(true);
-      const response = await fetch(`${API_BASE_URL}/accounts/register/`, {
+      const response = await fetch(`${BASE}/accounts/register/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -308,7 +297,6 @@ export const AppProvider = ({ children }) => {
       });
       const data = await handleApiResponse(response);
       if (!response.ok) throw new Error(data.detail || data.error || "Registration failed");
-      // Auto-login after successful registration
       return await login(email, password);
     } catch (err) {
       console.error("Registration failed:", err);
@@ -320,39 +308,13 @@ export const AppProvider = ({ children }) => {
 
   const isAuthenticated = () => !!user && !!localStorage.getItem("access_token");
 
-  // ─── Context Value ────────────────────────────────────────────────────────
   const contextValue = {
-    cart,
-    addToCart,
-    removeFromCart,
-    updateCartItemQuantity,
-    clearCart,
-    getCartTotal,
-    getCartItemsCount,
-    orders,
-    placeOrder,
-    getOrderById,
-    updateOrderStatus,
-    fetchUserOrders,
-    userAddresses,
-    createAddress,
-    fetchUserAddresses,
-    user,
-    setUser,
-    login,
-    logout,
-    register,
-    isAuthenticated,
-    products,
-    setProducts,
-    selectedProduct,
-    setSelectedProduct,
-    categories,
-    setCategories,
-    isLoading,
-    setIsLoading,
-    fetchProductsByCategory,
-    currentCategory,
+    cart, addToCart, removeFromCart, updateCartItemQuantity, clearCart,
+    getCartTotal, getCartItemsCount, orders, placeOrder, getOrderById,
+    updateOrderStatus, fetchUserOrders, userAddresses, createAddress,
+    fetchUserAddresses, user, setUser, login, logout, register, isAuthenticated,
+    products, setProducts, selectedProduct, setSelectedProduct, categories,
+    setCategories, isLoading, setIsLoading, fetchProductsByCategory, currentCategory,
   };
 
   return (
