@@ -7,20 +7,16 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // ─── Restore session on mount ────────────────────────────────────────────────
   const loadUser = useCallback(async () => {
-    const token = localStorage.getItem('access_token');
+    // FIX: use admin_access_token — completely separate from storefront token
+    const token = localStorage.getItem('admin_access_token');
 
-    // FIX: no token → nothing to fetch, clear loading immediately
     if (!token) {
       setLoading(false);
       return;
     }
 
     try {
-      // FIX: race the API call against a 8-second timeout so that if the
-      // backend is down or unreachable, loading never stays true forever
-      // and every admin page remains usable (will redirect to login).
       const res = await Promise.race([
         authService.me(),
         new Promise((_, reject) =>
@@ -29,38 +25,37 @@ export function AuthProvider({ children }) {
       ]);
       setUser(res.data);
     } catch (err) {
-      // FIX: on any error (network, 401, timeout) clear the stale tokens
-      // so the user gets redirected to login cleanly instead of hanging.
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
-      localStorage.removeItem('user');
+      // Clear only admin keys — never touch storefront tokens
+      localStorage.removeItem('admin_access_token');
+      localStorage.removeItem('admin_refresh_token');
+      localStorage.removeItem('admin_user');
       setUser(null);
     } finally {
-      // FIX: this ALWAYS runs — loading is never left as true
-      // which is what was causing the blur overlay on all three admin pages.
       setLoading(false);
     }
   }, []);
 
   useEffect(() => { loadUser(); }, [loadUser]);
 
-  // ─── Login ───────────────────────────────────────────────────────────────────
   const login = async (credentials) => {
     const res = await authService.login(credentials);
     const { access, refresh, user: userData } = res.data;
-    localStorage.setItem('access_token', access);
-    localStorage.setItem('refresh_token', refresh);
-    localStorage.setItem('user', JSON.stringify(userData));
+
+    // FIX: store under admin_* keys — never collides with storefront
+    localStorage.setItem('admin_access_token', access);
+    localStorage.setItem('admin_refresh_token', refresh);
+    localStorage.setItem('admin_user', JSON.stringify(userData));
     setUser(userData);
     return res.data;
   };
 
-  // ─── Logout ──────────────────────────────────────────────────────────────────
   const logout = async () => {
     try {
-      await authService.logout(localStorage.getItem('refresh_token'));
+      await authService.logout(localStorage.getItem('admin_refresh_token'));
     } finally {
-      ['access_token', 'refresh_token', 'user'].forEach((k) => localStorage.removeItem(k));
+      localStorage.removeItem('admin_access_token');
+      localStorage.removeItem('admin_refresh_token');
+      localStorage.removeItem('admin_user');
       setUser(null);
     }
   };

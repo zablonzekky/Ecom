@@ -136,7 +136,7 @@ export default function DashboardPage() {
       <div className="card">
         <div className="card-header flex justify-between items-center" style={{ paddingBottom: 16 }}>
           <h3 style={{ fontSize: 15, fontWeight: 600 }}>Recent Orders</h3>
-          <button className="btn btn-outline btn-sm" onClick={() => navigate('/orders')}>View All</button>
+          <button className="btn btn-outline btn-sm" onClick={() => navigate('/admin/orders')}>View All</button>
         </div>
         <div className="table-container">
           <table>

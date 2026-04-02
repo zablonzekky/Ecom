@@ -1,17 +1,20 @@
 import React, { useState } from "react";
 import { API_BASE_URL } from "../services/api";
 import { showError, showSuccess } from "../services/toast";
+import { Mail, ArrowLeft, Send } from "lucide-react"; // Optional: npm install lucide-react
+import { useNavigate } from "react-router-dom";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
 
   const submit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/accounts/auth/password/reset/`, {
+      const res = await fetch(`${API_BASE_URL}/api/accounts/auth/password/reset/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
@@ -31,52 +34,86 @@ export default function ForgotPasswordPage() {
 
   if (submitted) {
     return (
-      <div className="max-w-md mx-auto py-12 px-4 text-center">
-        <div className="bg-green-50 border border-green-200 rounded-xl p-8">
-          <div className="text-4xl mb-4">📧</div>
-          <h1 className="text-2xl font-bold mb-2 text-gray-800">Check your email</h1>
-          <p className="text-gray-500 mb-6">
-            We sent a password reset link to <span className="font-medium text-gray-700">{email}</span>.
-            Check your inbox and follow the link to reset your password.
+      <div className="min-h-[80vh] flex items-center justify-center px-4 bg-[#FDFBF9]">
+        <div className="max-w-md w-full bg-white border border-stone-200 rounded-2xl p-10 shadow-xl text-center">
+          <div className="w-20 h-20 bg-orange-50 text-[#8B4513] rounded-full flex items-center justify-center mx-auto mb-6 text-3xl">
+            <Mail size={40} />
+          </div>
+          <h1 className="text-2xl font-bold mb-3 text-[#5C4033]">Check your email</h1>
+          <p className="text-stone-500 mb-8 leading-relaxed">
+            We sent a password reset link to <br />
+            <span className="font-semibold text-[#8B4513]">{email}</span>.
           </p>
-          <button
-            onClick={() => setSubmitted(false)}
-            className="text-blue-600 text-sm underline"
-          >
-            Didn't receive it? Try again
-          </button>
+          <div className="space-y-4">
+            <button
+              onClick={() => setSubmitted(false)}
+              className="w-full bg-[#8B4513] text-white py-3 rounded-xl font-semibold hover:bg-[#703610] transition-all shadow-md"
+            >
+              Try another email
+            </button>
+            <button 
+              onClick={() => navigate("/login")}
+              className="flex items-center justify-center w-full text-stone-500 hover:text-[#5C4033] font-medium transition-colors"
+            >
+              <ArrowLeft size={18} className="mr-2" /> Back to Login
+            </button>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-md mx-auto py-12 px-4">
-      <div className="bg-white border rounded-xl p-8 shadow-sm">
-        <h1 className="text-2xl font-bold mb-1 text-gray-800">Forgot Password</h1>
-        <p className="text-gray-500 text-sm mb-6">
-          Enter your email and we'll send you a link to reset your password.
-        </p>
-        <form onSubmit={submit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email address
+    <div className="min-h-[80vh] flex items-center justify-center px-4 bg-[#FDFBF9]">
+      <div className="max-w-md w-full bg-white border border-stone-100 rounded-2xl p-8 shadow-2xl shadow-stone-200/50">
+        <div className="mb-8 text-center">
+          <h1 className="text-3xl font-bold text-[#5C4033] mb-2">Forgot Password?</h1>
+          <p className="text-stone-500">
+            Don't worry, it happens to the best of us. Let's get you back in.
+          </p>
+        </div>
+
+        <form onSubmit={submit} className="space-y-6">
+          <div className="relative">
+            <label className="block text-sm font-bold text-[#5C4033] mb-2 ml-1 uppercase tracking-wider">
+              Email Address
             </label>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="you@example.com"
-            />
+            <div className="relative">
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 pl-11 focus:outline-none focus:ring-2 focus:ring-[#8B4513]/20 focus:border-[#8B4513] transition-all"
+                placeholder="Enter your registered email"
+              />
+              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400" size={18} />
+            </div>
           </div>
+
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-blue-600 text-white rounded-md py-2 font-medium hover:bg-blue-700 disabled:opacity-60 transition"
+            className="w-full bg-[#8B4513] text-white rounded-xl py-4 font-bold hover:bg-[#703610] disabled:opacity-70 transition-all flex items-center justify-center shadow-lg shadow-stone-200"
           >
-            {isLoading ? "Sending..." : "Send Reset Link"}
+            {isLoading ? (
+              <span className="flex items-center">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
+                Sending Link...
+              </span>
+            ) : (
+              <span className="flex items-center">
+                Send Reset Link <Send size={18} className="ml-2" />
+              </span>
+            )}
+          </button>
+
+          <button 
+            type="button"
+            onClick={() => navigate("/login")}
+            className="w-full text-center text-stone-500 hover:text-[#8B4513] font-medium transition-colors text-sm"
+          >
+            Wait, I remember my password!
           </button>
         </form>
       </div>

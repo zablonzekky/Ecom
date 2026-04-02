@@ -1,7 +1,6 @@
 from rest_framework import serializers
 from orders.models import Order, OrderItem, OrderTimeline, Refund
 
-
 class OrderItemSerializer(serializers.ModelSerializer):
     subtotal = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
     product_name = serializers.CharField(source='product.name', read_only=True)
@@ -9,6 +8,8 @@ class OrderItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrderItem
         fields = ['id', 'product', 'product_name', 'quantity', 'price', 'subtotal']
+        # Unique ref_name for Swagger
+        ref_name = "AdminOrderItem"
 
 
 class OrderTimelineSerializer(serializers.ModelSerializer):
@@ -17,12 +18,14 @@ class OrderTimelineSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrderTimeline
         fields = ['id', 'status', 'note', 'created_at', 'created_by', 'created_by_name']
+        ref_name = "AdminOrderTimeline"
 
 
 class RefundSerializer(serializers.ModelSerializer):
     class Meta:
         model = Refund
         fields = ['id', 'reason', 'amount', 'status', 'created_at', 'updated_at']
+        ref_name = "AdminOrderRefund"
 
 
 class OrderSerializer(serializers.ModelSerializer):
@@ -42,6 +45,8 @@ class OrderSerializer(serializers.ModelSerializer):
             'created_at', 'updated_at',
         ]
         read_only_fields = ['id', 'order_number', 'created_at', 'updated_at']
+        # Unique ref_name for Swagger
+        ref_name = "AdminOrderDetails"
 
     def get_customer_name(self, obj):
         return obj.user.get_full_name() if obj.user else 'Unknown'
@@ -59,6 +64,7 @@ class OrderCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = ['user', 'address', 'notes', 'items']
+        ref_name = "AdminOrderCreate"
 
     def create(self, validated_data):
         items_data = validated_data.pop('items')

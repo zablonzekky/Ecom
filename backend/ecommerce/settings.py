@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     # Third Party
     "corsheaders",
     "rest_framework",
+    'drf_yasg',
     "rest_framework.authtoken",
     "rest_framework_simplejwt",
     "rest_framework_simplejwt.token_blacklist",
@@ -159,6 +160,7 @@ REST_AUTH = {
     "JWT_AUTH_REFRESH_COOKIE": None,
     "OLD_PASSWORD_FIELD_ENABLED": True,
     "PASSWORD_RESET_USE_SITES_DOMAIN": False,
+    "PASSWORD_RESET_URL_GENERATOR": "accounts.utils.custom_password_reset_url_generator",
 }
 
 # =======================
@@ -171,9 +173,11 @@ MPESA_PASSKEY = os.getenv("MPESA_PASSKEY")
 MPESA_CALLBACK_URL = os.getenv("MPESA_CALLBACK_URL")
 MPESA_ENVIRONMENT = os.getenv("MPESA_ENVIRONMENT", "sandbox")
 
+# PayPal
 # =======================
-# JWT
-# =======================
+PAYPAL_CLIENT_ID = os.getenv("PAYPAL_CLIENT_ID")
+PAYPAL_CLIENT_SECRET = os.getenv("PAYPAL_CLIENT_SECRET")
+PAYPAL_ENVIRONMENT = os.getenv("PAYPAL_ENVIRONMENT", "sandbox") # 'sandbox' or 'live'
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
@@ -197,7 +201,7 @@ ACCOUNT_UNIQUE_EMAIL = True
 ACCOUNT_EMAIL_VERIFICATION = "optional"
 ACCOUNT_DEFAULT_HTTP_PROTOCOL = "https"
 
-# =======================
+
 # Password Reset
 # =======================
 FRONTEND_URL = os.getenv(
@@ -234,6 +238,9 @@ SOCIALACCOUNT_PROVIDERS = {
         "SCOPE": ["email", "public_profile"],
     },
 }
+SOCIALACCOUNT_EMAIL_AUTHENTICATION             = True
+SOCIALACCOUNT_EMAIL_AUTHENTICATION_AUTO_CONNECT = True
+SOCIALACCOUNT_LOGIN_ON_GET                     = True  # skip allauth confirm page
 
 # =======================
 # Internationalisation
@@ -292,7 +299,7 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", EMAIL_HOST_USER)
-CONTACT_RECEIVER_EMAIL = os.getenv("CONTACT_RECEIVER_EMAIL", "support@ecom.local")
+CONTACT_RECEIVER_EMAIL = os.getenv("CONTACT_RECEIVER_EMAIL", "ewwabwoba@gmail.com")
 
 # =======================
 # Logging
@@ -308,3 +315,7 @@ LOGGING = {
         "level": os.getenv("LOG_LEVEL", "INFO"),
     },
 }
+LOGIN_REDIRECT_URL = "http://localhost:3000/auth/callback"
+if DEBUG:
+    import urllib3
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)

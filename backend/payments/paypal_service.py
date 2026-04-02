@@ -14,6 +14,8 @@ class PaypalService:
             if getattr(settings, "PAYPAL_ENVIRONMENT", "sandbox") == "live"
             else "https://api-m.sandbox.paypal.com"
         )
+        # Disable SSL verification in DEBUG (Windows self-signed cert issue)
+        self.verify_ssl = not settings.DEBUG
 
     def _get_access_token(self):
         if not self.client_id or not self.client_secret:
@@ -24,6 +26,7 @@ class PaypalService:
             auth=(self.client_id, self.client_secret),
             data={"grant_type": "client_credentials"},
             timeout=30,
+            verify=self.verify_ssl,
         )
         response.raise_for_status()
         token = response.json().get("access_token")
@@ -42,6 +45,7 @@ class PaypalService:
             headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
             json=payload,
             timeout=30,
+            verify=self.verify_ssl,
         )
         response.raise_for_status()
         return response.json()
@@ -52,6 +56,7 @@ class PaypalService:
             f"{self.base_url}/v2/checkout/orders/{paypal_order_id}/capture",
             headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
             timeout=30,
+            verify=self.verify_ssl,
         )
         response.raise_for_status()
         return response.json()

@@ -271,6 +271,58 @@ export const AppProvider = ({ children }) => {
     }
   };
 
+  /**
+   * loginWithTokens — used by social auth (Google / Facebook).
+   * The backend returns { access, refresh, user } after we POST the
+   * provider access_token. We mirror exactly what login() does after
+   * receiving tokens, including a profile fetch fallback.
+   */
+  const loginWithTokens = async (data) => {
+    try {
+      setIsLoading(true);
+
+      // data must contain at minimum: { access, refresh }
+      if (!data?.access) throw new Error("No access token returned from social auth.");
+
+      localStorage.setItem("access_token", data.access);
+      localStorage.setItem("refresh_token", data.refresh);
+
+      // Try to use the user object the backend already returned
+      let userData = data.user || null;
+
+      // If not included, fetch the profile — same fallback as login()
+      if (!userData) {
+        try {
+          const profileResponse = await fetch(`${BASE}/auth/profile/`, {
+            headers: { Authorization: `Bearer ${data.access}` },
+          });
+          if (profileResponse.ok) {
+            userData = await handleApiResponse(profileResponse);
+          }
+        } catch (_) {}
+      }
+
+      // Last resort: store minimal info so the app knows someone is logged in
+      if (!userData) {
+        userData = { token: data.access, refreshToken: data.refresh };
+      }
+
+      localStorage.setItem("user_data", JSON.stringify(userData));
+      setUser(userData);
+      await fetchUserOrders();
+      await fetchUserAddresses();
+      return { success: true, user: userData };
+    } catch (err) {
+      console.error("Social login failed:", err);
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("refresh_token");
+      localStorage.removeItem("user_data");
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const logout = () => {
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
@@ -312,9 +364,10 @@ export const AppProvider = ({ children }) => {
     cart, addToCart, removeFromCart, updateCartItemQuantity, clearCart,
     getCartTotal, getCartItemsCount, orders, placeOrder, getOrderById,
     updateOrderStatus, fetchUserOrders, userAddresses, createAddress,
-    fetchUserAddresses, user, setUser, login, logout, register, isAuthenticated,
-    products, setProducts, selectedProduct, setSelectedProduct, categories,
-    setCategories, isLoading, setIsLoading, fetchProductsByCategory, currentCategory,
+    fetchUserAddresses, user, setUser, login, loginWithTokens, logout,
+    register, isAuthenticated, products, setProducts, selectedProduct,
+    setSelectedProduct, categories, setCategories, isLoading, setIsLoading,
+    fetchProductsByCategory, currentCategory,
   };
 
   return (

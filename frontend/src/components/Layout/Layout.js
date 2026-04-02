@@ -1,10 +1,12 @@
 import React from 'react';
+
 function Layout({ children, className = '' }) {
   return (
-    <div className={`w-full px-4 sm:px-6 lg:px-8 py-8 ${className}`}>
-      <div className="max-w-7xl mx-auto">
+    // We removed the max-width and padding that were trapping your content
+    <div className={`w-full min-h-screen flex flex-col ${className}`}>
+      <main className="flex-grow">
         {children}
-      </div>
+      </main>
     </div>
   );
 }

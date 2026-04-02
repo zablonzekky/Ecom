@@ -1,7 +1,6 @@
 from rest_framework import serializers
 from products.models import Product, Category, Size, ProductImage
 
-
 class CategorySerializer(serializers.ModelSerializer):
     product_count = serializers.IntegerField(source='products.count', read_only=True)
 
@@ -9,18 +8,21 @@ class CategorySerializer(serializers.ModelSerializer):
         model = Category
         fields = ['id', 'name', 'slug', 'gender', 'description', 'image', 'is_active', 'product_count', 'created_at']
         read_only_fields = ['id', 'created_at']
+        ref_name = "AdminCategory"  # Added unique ref_name
 
 
 class ProductImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductImage
         fields = ['id', 'image', 'alt_text', 'is_primary']
+        ref_name = "AdminProductImage"
 
 
 class SizeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Size
         fields = ['id', 'size_type', 'value', 'stock']
+        ref_name = "AdminProductSize"
 
     def validate_stock(self, value):
         if value < 0:
@@ -44,6 +46,7 @@ class ProductSerializer(serializers.ModelSerializer):
             'images', 'sizes', 'created_at', 'updated_at',
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
+        ref_name = "AdminProductDetail"
 
 
 class ProductCreateUpdateSerializer(serializers.ModelSerializer):
@@ -57,6 +60,7 @@ class ProductCreateUpdateSerializer(serializers.ModelSerializer):
             'price', 'discount_price', 'stock', 'is_active', 'is_featured',
             'sizes', 'images',
         ]
+        ref_name = "AdminProductCreateUpdate"
 
     def validate_stock(self, value):
         if value < 0:
@@ -89,10 +93,12 @@ class ProductCreateUpdateSerializer(serializers.ModelSerializer):
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
+        
         if sizes_data is not None:
             instance.sizes.all().delete()
             for size_data in sizes_data:
                 Size.objects.create(product=instance, **size_data)
+        
         if images_data is not None:
             instance.images.all().delete()
             for image_data in images_data:

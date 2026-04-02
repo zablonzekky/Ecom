@@ -61,7 +61,7 @@ function ProfileTab({ user, onSaved }) {
     setLoading(true);
     try {
       const token = localStorage.getItem("access_token");
-      const res = await fetch(`${API_BASE_URL}/accounts/profile/`, {
+      const res = await fetch(`${API_BASE_URL}/api/accounts/profile/`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(form),
@@ -203,7 +203,7 @@ function PasswordTab() {
     setLoading(true);
     try {
       const token = localStorage.getItem("access_token");
-      const res = await fetch(`${API_BASE_URL}/accounts/auth/password/change/`, {
+      const res = await fetch(`${API_BASE_URL}/api/accounts/auth/password/change/`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(form),
@@ -331,7 +331,7 @@ function AddressTab({ user }) {
     setLoading(true);
     try {
       const token = localStorage.getItem("access_token");
-      const res = await fetch(`${API_BASE_URL}/accounts/addresses/`, {
+      const res = await fetch(`${API_BASE_URL}/api/accounts/addresses/`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ ...form, is_default: true }),

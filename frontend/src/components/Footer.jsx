@@ -1,6 +1,4 @@
-import React, { useState } from "react";
-import { API_BASE_URL } from "../services/api";
-import { showError, showSuccess } from "../services/toast";
+import React from "react";
 import { Link } from "react-router-dom";
 import {
   Facebook,
@@ -9,53 +7,20 @@ import {
   Mail,
   MapPin,
   Phone,
-  Heart,
 } from "lucide-react";
 
 function Footer() {
-  const [email, setEmail] = useState("");
-
-  const handleSubscribe = async (e) => {
-    e.preventDefault();
-    if (!email.trim()) return;
-    const response = await fetch(`${API_BASE_URL}/accounts/newsletter/subscribe/`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email }),
-    });
-    if (response.ok) {
-      showSuccess("Subscribed successfully.");
-      setEmail("");
-    } else {
-      showError("Subscription failed.");
-    }
-  };
-
   const currentYear = new Date().getFullYear();
 
   return (
     <footer className="bg-gray-900 text-white">
-      {/* Newsletter Section */}
-
       {/* Main Footer Content */}
       <div className="w-full px-4 sm:px-6 lg:px-8 py-16">
-      <div className="max-w-7xl mx-auto mb-10 bg-gray-800 rounded-xl p-5 flex flex-col md:flex-row gap-3 items-center justify-between">
-        <div>
-          <h3 className="font-semibold">Subscribe to our newsletter</h3>
-          <p className="text-sm text-gray-300">Get promotions and product updates.</p>
-        </div>
-        <form onSubmit={handleSubscribe} className="flex w-full md:w-auto gap-2">
-          <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" required placeholder="Enter your email" className="px-3 py-2 rounded-md text-gray-900 w-full md:w-72" />
-          <button className="bg-blue-600 px-4 py-2 rounded-md">Subscribe</button>
-        </form>
-      </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 max-w-7xl mx-auto mb-12">
           {/* Brand Column */}
           <div className="md:col-span-1 lg:col-span-1">
             <Link to="/" className="inline-block mb-4">
-              <span className="text-3xl font-bold text-white">
-                Ecom
-              </span>
+              <span className="text-3xl font-bold text-white">Ecom</span>
             </Link>
             <p className="text-gray-400 mb-6 text-sm leading-relaxed">
               Premium fashion destination for style-conscious shoppers. Quality,
@@ -141,7 +106,7 @@ function Footer() {
                   <span className="w-1 h-1 bg-blue-400 rounded-full opacity-0 group-hover:opacity-100 transition"></span>
                   Contact Us
                 </Link>
-          
+
                 <Link
                   to="/orders"
                   className="text-gray-400 hover:text-blue-400 transition flex items-center gap-2 group"
@@ -186,7 +151,6 @@ function Footer() {
                   Blog
                 </a>
               </li>
-
               <li>
                 <Link
                   to="/"
@@ -196,7 +160,6 @@ function Footer() {
                   Careers
                 </Link>
               </li>
-           
             </ul>
           </div>
 
@@ -282,13 +245,6 @@ function Footer() {
                     Bank
                   </div>
                 </div>
-              </div>
-
-              {/* Made with Love */}
-              <div className="text-gray-400 text-sm text-center md:text-right flex items-center justify-center md:justify-end gap-2">
-                <span>Made with</span>
-                <Heart size={16} className="text-red-500 fill-red-500" />
-                <span>in Kenya</span>
               </div>
             </div>
           </div>

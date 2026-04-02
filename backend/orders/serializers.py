@@ -2,7 +2,6 @@ from rest_framework import serializers
 from .models import Address, Order, OrderItem
 from products.models import Product
 
-# Address serializer
 class AddressSerializer(serializers.ModelSerializer):
     class Meta:
         model = Address
@@ -11,8 +10,9 @@ class AddressSerializer(serializers.ModelSerializer):
             'address_line2', 'city', 'county', 'postal_code', 'is_default'
         ]
         read_only_fields = ['id']
+        ref_name = "UserAddress"
 
-# OrderItem serializer
+
 class OrderItemSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source='product.name', read_only=True)
 
@@ -20,23 +20,28 @@ class OrderItemSerializer(serializers.ModelSerializer):
         model = OrderItem
         fields = ['id', 'product', 'product_name', 'quantity', 'price', 'subtotal']
         read_only_fields = ['id', 'price', 'subtotal']
+        # Unique ref_name for Swagger
+        ref_name = "UserOrderItem"
 
-# Order serializer
+
 class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True, read_only=True)
     address = AddressSerializer(read_only=True)
-    user_name = serializers.CharField(source='user.username', read_only=True)
+    # Corrected: Use email instead of username to match your custom User model
+    user_email = serializers.CharField(source='user.email', read_only=True)
 
     class Meta:
         model = Order
         fields = [
-            'id', 'order_number', 'user', 'user_name', 'address',
+            'id', 'order_number', 'user', 'user_email', 'address',
             'status', 'subtotal', 'shipping_cost', 'total',
             'items', 'notes', 'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'order_number', 'user', 'created_at', 'updated_at']
+        # Unique ref_name for Swagger
+        ref_name = "UserOrderDetails"
 
-# CreateOrder serializer
+
 class CreateOrderSerializer(serializers.Serializer):
     address_id = serializers.IntegerField()
     items = serializers.ListField(child=serializers.DictField())
@@ -50,7 +55,6 @@ class CreateOrderSerializer(serializers.Serializer):
             product_id = item.get('product_id')
             quantity = item.get('quantity', 1)
             
-            # Check product exists
             try:
                 product = Product.objects.get(id=product_id)
             except Product.DoesNotExist:

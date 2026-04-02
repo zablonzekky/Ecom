@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { API_BASE_URL } from "../services/api";
 import { showError, showSuccess } from "../services/toast";
+import { Lock, ShieldCheck, CheckCircle } from "lucide-react";
 
 export default function ResetPasswordPage() {
   const { uid, token } = useParams();
@@ -19,7 +20,7 @@ export default function ResetPasswordPage() {
 
     setIsLoading(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/accounts/auth/password/reset/confirm/`, {
+      const res = await fetch(`${API_BASE_URL}/api/accounts/auth/password/reset/confirm/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -35,12 +36,7 @@ export default function ResetPasswordPage() {
         showSuccess("Password reset successfully!");
       } else {
         const data = await res.json().catch(() => ({}));
-        const message =
-          data?.token?.[0] ||
-          data?.uid?.[0] ||
-          data?.new_password2?.[0] ||
-          data?.detail ||
-          "Failed to reset password. The link may have expired.";
+        const message = data?.detail || "Failed to reset password. The link may have expired.";
         showError(message);
       }
     } catch {
@@ -52,18 +48,20 @@ export default function ResetPasswordPage() {
 
   if (done) {
     return (
-      <div className="max-w-md mx-auto py-12 px-4 text-center">
-        <div className="bg-green-50 border border-green-200 rounded-xl p-8">
-          <div className="text-4xl mb-4">✅</div>
-          <h1 className="text-2xl font-bold mb-2 text-gray-800">Password Reset!</h1>
-          <p className="text-gray-500 mb-6">
-            Your password has been updated. You can now log in with your new password.
+      <div className="min-h-[80vh] flex items-center justify-center px-4 bg-[#FDFBF9]">
+        <div className="max-w-md w-full bg-white border border-stone-200 rounded-2xl p-10 shadow-xl text-center">
+          <div className="w-20 h-20 bg-green-50 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
+            <CheckCircle size={48} />
+          </div>
+          <h1 className="text-2xl font-bold mb-2 text-[#5C4033]">All Set!</h1>
+          <p className="text-stone-500 mb-8 leading-relaxed">
+            Your password has been securely updated. You can now log back into your account.
           </p>
           <button
             onClick={() => navigate("/login")}
-            className="bg-blue-600 text-white rounded-md px-6 py-2 font-medium hover:bg-blue-700 transition"
+            className="w-full bg-[#8B4513] text-white rounded-xl py-4 font-bold hover:bg-[#703610] transition-all shadow-lg"
           >
-            Go to Login
+            Continue to Login
           </button>
         </div>
       </div>
@@ -71,45 +69,59 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="max-w-md mx-auto py-12 px-4">
-      <div className="bg-white border rounded-xl p-8 shadow-sm">
-        <h1 className="text-2xl font-bold mb-1 text-gray-800">Set New Password</h1>
-        <p className="text-gray-500 text-sm mb-6">
-          Choose a strong password for your account.
-        </p>
-        <form onSubmit={submit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              New password
-            </label>
-            <input
-              type="password"
-              required
-              value={password.new_password1}
-              onChange={(e) => setPassword({ ...password, new_password1: e.target.value })}
-              className="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="At least 8 characters"
-            />
+    <div className="min-h-[80vh] flex items-center justify-center px-4 bg-[#FDFBF9]">
+      <div className="max-w-md w-full bg-white border border-stone-100 rounded-2xl p-8 shadow-2xl">
+        <div className="mb-8 text-center">
+          <div className="inline-flex p-3 bg-orange-50 text-[#8B4513] rounded-xl mb-4">
+            <ShieldCheck size={32} />
           </div>
+          <h1 className="text-3xl font-bold text-[#5C4033] mb-2">New Password</h1>
+          <p className="text-stone-500">
+            Please enter your new secure password below.
+          </p>
+        </div>
+
+        <form onSubmit={submit} className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Confirm new password
+            <label className="block text-sm font-bold text-[#5C4033] mb-2 ml-1 uppercase tracking-wider">
+              New Password
             </label>
-            <input
-              type="password"
-              required
-              value={password.new_password2}
-              onChange={(e) => setPassword({ ...password, new_password2: e.target.value })}
-              className="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Repeat your new password"
-            />
+            <div className="relative">
+              <input
+                type="password"
+                required
+                value={password.new_password1}
+                onChange={(e) => setPassword({ ...password, new_password1: e.target.value })}
+                className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 pl-11 focus:outline-none focus:ring-2 focus:ring-[#8B4513]/20 focus:border-[#8B4513] transition-all"
+                placeholder="At least 8 characters"
+              />
+              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400" size={18} />
+            </div>
           </div>
+
+          <div>
+            <label className="block text-sm font-bold text-[#5C4033] mb-2 ml-1 uppercase tracking-wider">
+              Confirm Password
+            </label>
+            <div className="relative">
+              <input
+                type="password"
+                required
+                value={password.new_password2}
+                onChange={(e) => setPassword({ ...password, new_password2: e.target.value })}
+                className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 pl-11 focus:outline-none focus:ring-2 focus:ring-[#8B4513]/20 focus:border-[#8B4513] transition-all"
+                placeholder="Repeat new password"
+              />
+              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400" size={18} />
+            </div>
+          </div>
+
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-blue-600 text-white rounded-md py-2 font-medium hover:bg-blue-700 disabled:opacity-60 transition"
+            className="w-full bg-[#8B4513] text-white rounded-xl py-4 font-bold hover:bg-[#703610] disabled:opacity-70 transition-all shadow-lg"
           >
-            {isLoading ? "Resetting..." : "Reset Password"}
+            {isLoading ? "Updating Security..." : "Reset Password"}
           </button>
         </form>
       </div>

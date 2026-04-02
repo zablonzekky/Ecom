@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React, { useState, useEffect, useCallback } from 'react';
 import { Star, Check, X, Trash2, Tag, Bell, Activity } from 'lucide-react';
 import { reviewService, discountService, notificationService } from '../../src/services';
