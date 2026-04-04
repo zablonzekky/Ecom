@@ -4,12 +4,19 @@ export const API_BASE_URL = (process.env.REACT_APP_API_URL || 'http://localhost:
 
 export const axiosInstance = axios.create({
   baseURL: `${API_BASE_URL}/api`,
-  headers: { 'Content-Type': 'application/json' },
+  // REMOVED: 'Content-Type': 'application/json' — this was killing file uploads
+  // by forcing JSON encoding on every request, converting File objects to {}
 });
 
 axiosInstance.interceptors.request.use(
   (config) => {
-    // FIX: admin routes use admin_access_token, everything else uses access_token
+    // Only set JSON content type when NOT sending FormData
+    // For FormData (file uploads), let the browser set Content-Type automatically
+    // so it includes the multipart boundary — without this, file uploads break
+    if (!(config.data instanceof FormData)) {
+      config.headers['Content-Type'] = 'application/json';
+    }
+
     const isAdminRequest = config.url?.includes('/admin/');
     const token = isAdminRequest
       ? localStorage.getItem('admin_access_token')
@@ -41,13 +48,11 @@ axiosInstance.interceptors.response.use(
         return axiosInstance(original);
       } catch (err) {
         if (isAdminRequest) {
-          // Admin session expired → admin login
           localStorage.removeItem('admin_access_token');
           localStorage.removeItem('admin_refresh_token');
           localStorage.removeItem('admin_user');
           window.location.href = '/admin/login';
         } else {
-          // Storefront session expired → storefront login
           localStorage.removeItem('access_token');
           localStorage.removeItem('refresh_token');
           localStorage.removeItem('user_data');

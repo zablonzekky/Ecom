@@ -18,9 +18,6 @@ export default function CheckoutPaypalPage() {
     e.preventDefault();
     setProcessing(true);
 
-    // ✅ Open blank window IMMEDIATELY on user click (before any await)
-    // Browsers only allow window.open() during a direct user gesture.
-    // After an await, it's treated as a popup and gets blocked.
     const paypalWindow = window.open("", "_blank");
     if (!paypalWindow) {
       showError("Popup was blocked. Please allow popups for this site and try again.");
@@ -28,7 +25,6 @@ export default function CheckoutPaypalPage() {
       return;
     }
 
-    // Show a loading screen inside the blank tab while we fetch the PayPal URL
     paypalWindow.document.write(`
       <html>
         <head><title>Connecting to PayPal...</title></head>
@@ -42,23 +38,25 @@ export default function CheckoutPaypalPage() {
       </html>
     `);
 
-    let order = null;
+    let orderId = null;
 
     try {
       const token = localStorage.getItem("access_token");
 
-      // ── Step 1: Create the order ──────────────────────────────────────
+      // Step 1: Create order
+      let order;
       try {
         order = await placeOrder({
           address,
           items: cart.map((i) => ({ product_id: i.id, quantity: i.quantity })),
         });
+        orderId = order.id;
       } catch (orderErr) {
         paypalWindow.close();
         throw new Error("Failed to create order: " + (orderErr.message || "Unknown error"));
       }
 
-      // ── Step 2: Initiate PayPal on the backend ────────────────────────
+      // Step 2: Initiate PayPal
       let initRes, initData;
       try {
         initRes = await fetch(`${API_BASE_URL}/api/payments/paypal/initiate/`, {
@@ -67,31 +65,56 @@ export default function CheckoutPaypalPage() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ order_id: order.id, email_hint: paypalEmail }),
+          body: JSON.stringify({ order_id: orderId, email_hint: paypalEmail }),
         });
         initData = await initRes.json();
       } catch (fetchErr) {
         paypalWindow.close();
-        throw new Error(
-          `PayPal connection failed — your Order #${order?.id} was saved. ` +
-          `Go to your orders to retry payment. (${fetchErr.message})`
-        );
+        showError("PayPal connection failed. Your order was saved — redirecting to your orders...");
+        setTimeout(() => navigate("/orders"), 2000);
+        return;
       }
 
       if (!initRes.ok) {
         paypalWindow.close();
-        throw new Error(
-          `PayPal error (Order #${order?.id} saved): ` +
-          (initData?.error || `HTTP ${initRes.status}`)
-        );
+        showError((initData?.error || "PayPal error") + " — your order was saved.");
+        setTimeout(() => navigate("/orders"), 2000);
+        return;
       }
 
-      // ── Step 3: Redirect the pre-opened tab to PayPal ─────────────────
+      // Step 3: Redirect tab to PayPal
       if (initData.approval_url) {
-        // Navigate the already-open tab — no new popup needed
         paypalWindow.location.href = initData.approval_url;
         showSuccess("PayPal opened! Complete payment there, then check your orders.");
+
+        // Step 4: Poll for confirmation
+        for (let i = 0; i < 20; i += 1) {
+          const statusRes = await fetch(`${API_BASE_URL}/api/payments/status/${orderId}/`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          const statusData = await statusRes.json();
+
+          if (statusData.status === "completed") {
+            showSuccess("Payment successful!");
+            navigate("/orders");
+            return;
+          }
+
+          if (statusData.status === "failed") {
+            await fetch(`${API_BASE_URL}/api/orders/${orderId}/cancel/`, {
+              method: "POST",
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            throw new Error("Payment failed. Order was cancelled.");
+          }
+
+          await new Promise((r) => setTimeout(r, 2000));
+        }
+
+        // Timeout — don't cancel
+        showSuccess("Payment is being confirmed. Check your orders for status.");
         navigate("/orders");
+
       } else {
         paypalWindow.close();
         throw new Error("No PayPal approval URL returned from server.");
@@ -99,12 +122,8 @@ export default function CheckoutPaypalPage() {
 
     } catch (err) {
       showError(err.message || "Payment initiation failed");
-
-      // If order was created but PayPal failed, redirect after delay
-      // so the user can see and retry their pending order
-      if (order?.id) {
-        showError(`Redirecting to your orders in 3 seconds...`);
-        setTimeout(() => navigate("/orders"), 3000);
+      if (orderId) {
+        setTimeout(() => navigate("/orders"), 2000);
       }
     } finally {
       setProcessing(false);
@@ -114,7 +133,6 @@ export default function CheckoutPaypalPage() {
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-6">PayPal Checkout</h1>
-
       <form onSubmit={handleSubmit} className="space-y-3">
         {Object.keys(address).map((key) => (
           <input
@@ -126,7 +144,6 @@ export default function CheckoutPaypalPage() {
             className="w-full border rounded-md px-3 py-2 bg-blue-50/20"
           />
         ))}
-
         <input
           required
           type="email"
@@ -135,12 +152,10 @@ export default function CheckoutPaypalPage() {
           placeholder="PAYPAL EMAIL"
           className="w-full border rounded-md px-3 py-2 bg-blue-50/20"
         />
-
         <button
           type="submit"
           disabled={processing}
-          className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-60 
-                     text-white py-3 rounded-md font-bold transition-all"
+          className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white py-3 rounded-md font-bold transition-all"
         >
           {processing ? "Connecting to PayPal..." : "Pay with PayPal"}
         </button>

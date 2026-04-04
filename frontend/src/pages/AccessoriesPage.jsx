@@ -1,4 +1,3 @@
-// ------- src/pages/AccessoriesPage.jsx -------
 import React, { useEffect, useState } from "react";
 import { useAppContext } from "../context/AppContext";
 import ProductCard from "../components/ProductCard";
@@ -11,7 +10,7 @@ function AccessoriesPage() {
   const [sortBy, setSortBy] = useState("featured");
 
   useEffect(() => {
-    fetchProductsByCategory("Accessories");
+    fetchProductsByCategory("accessories");
   }, []);
 
   const filteredProducts = products
@@ -20,9 +19,7 @@ function AccessoriesPage() {
       const title = p?.title?.toLowerCase() || "";
       const brand = p?.brand?.toLowerCase() || "";
       const type = p?.product_type?.toLowerCase() || "";
-      return (
-        title.includes(term) || brand.includes(term) || type.includes(term)
-      );
+      return title.includes(term) || brand.includes(term) || type.includes(term);
     })
     .sort((a, b) => {
       switch (sortBy) {
@@ -33,7 +30,7 @@ function AccessoriesPage() {
         case "rating":
           return (b.rating || 0) - (a.rating || 0);
         case "name":
-          return a.title.localeCompare(b.title);
+          return (a.title || "").localeCompare(b.title || "");
         default:
           return 0;
       }
@@ -105,7 +102,7 @@ function AccessoriesPage() {
           <div
             className={
               viewMode === "grid"
-                ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
+                ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
                 : "space-y-6"
             }
           >

@@ -22,7 +22,7 @@ export default function ProductList() {
   const fetchProducts = useCallback(async () => {
     setLoading(true);
     try {
-      const params = { page, page_size: 12 };
+      const params = { page, page_size: 5 };
       if (search)       params.search    = search;
       if (categoryFilter) params.category = categoryFilter;
       if (statusFilter === 'active')   params.is_active = 'true';

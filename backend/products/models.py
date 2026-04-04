@@ -30,7 +30,7 @@ class Product(models.Model):
     TYPE_CHOICES = [
         ('shoes', 'Shoes'),
         ('clothing', 'Clothing'),
-        ('accessories', 'Accessories'),
+        ('Accessories', 'Accessories'),
     ]
     
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='products')

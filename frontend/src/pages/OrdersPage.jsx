@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { useAppContext } from "../context/AppContext";
+import { API_BASE_URL } from "../services/api";
 import {
   ShoppingBag, Package, Clock, CheckCircle, XCircle,
   Truck, RefreshCw, ChevronLeft, ChevronRight,
-  MapPin, Calendar, Hash, ArrowRight
+  MapPin, Calendar, ArrowRight, Download, Navigation,
 } from "lucide-react";
 
-/* ─── Constants ─────────────────────────────────────────────── */
 const PAGE_SIZE = 5;
 
 const STATUS_CONFIG = {
@@ -19,10 +19,15 @@ const STATUS_CONFIG = {
   refunded:   { label: "Refunded",   icon: RefreshCw,   bg: "#8e44ad" },
 };
 
+const ZONE_TYPE_CONFIG = {
+  cbd:       { label: "CBD",        color: "#2980b9", bg: "#eaf4fb" },
+  suburb:    { label: "Suburbs",    color: "#27ae60", bg: "#eafaf1" },
+  upcountry: { label: "Upcountry", color: "#8e44ad", bg: "#f5eefb" },
+};
+
 const n   = (v) => Number(v) || 0;
 const kes = (v) => `KES ${n(v).toLocaleString("en-KE", { minimumFractionDigits: 2 })}`;
 
-/* ─── Status Badge ───────────────────────────────────────────── */
 function StatusBadge({ status }) {
   const cfg = STATUS_CONFIG[status?.toLowerCase()] ?? STATUS_CONFIG.pending;
   const Icon = cfg.icon;
@@ -41,14 +46,30 @@ function StatusBadge({ status }) {
   );
 }
 
-/* ─── Summary Stat Card ──────────────────────────────────────── */
+function ZoneBadge({ zone }) {
+  if (!zone) return null;
+  const cfg = ZONE_TYPE_CONFIG[zone.zone_type] ?? { label: zone.zone_type, color: "#9a8878", bg: "#f5f0ea" };
+  return (
+    <span style={{
+      display: "inline-flex", alignItems: "center", gap: 4,
+      padding: "3px 9px", borderRadius: 20,
+      fontSize: 10, fontWeight: 700, letterSpacing: "0.05em",
+      textTransform: "uppercase",
+      background: cfg.bg, color: cfg.color,
+      whiteSpace: "nowrap",
+      border: `1px solid ${cfg.color}30`,
+    }}>
+      <Navigation size={8} />
+      {zone.name}
+    </span>
+  );
+}
+
 function StatCard({ icon: Icon, label, value, accent }) {
   return (
     <div style={{
-      background: "#fff",
-      borderRadius: 14,
-      border: "1px solid #ede8e0",
-      padding: "18px 20px",
+      background: "#fff", borderRadius: 14,
+      border: "1px solid #ede8e0", padding: "18px 20px",
       display: "flex", alignItems: "center", gap: 14,
       boxShadow: "0 1px 4px rgba(26,17,8,0.05)",
       transition: "box-shadow 0.2s, transform 0.2s",
@@ -72,7 +93,38 @@ function StatCard({ icon: Icon, label, value, accent }) {
   );
 }
 
-/* ─── Order Card ─────────────────────────────────────────────── */
+function ShippingBreakdown({ order }) {
+  const zone = order.shipping_zone;
+  const shippingCost = n(order.shipping_cost);
+  const isFree = shippingCost === 0;
+
+  return (
+    <div style={{
+      display: "flex", alignItems: "center", justifyContent: "space-between",
+      padding: "10px 14px", borderRadius: 10,
+      background: isFree ? "#eafaf1" : "#fdf8f4",
+      border: `1px solid ${isFree ? "#a9dfbf" : "#f5e8d8"}`,
+      marginBottom: 14,
+      gap: 10, flexWrap: "wrap",
+    }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <Truck size={13} color={isFree ? "#27ae60" : "#c2621a"} />
+        <span style={{ fontSize: 12, color: "#4a3f35", fontWeight: 500 }}>
+          {isFree ? "Free shipping applied" : "Shipping"}
+        </span>
+        {zone && <ZoneBadge zone={zone} />}
+      </div>
+      <span style={{
+        fontSize: 12, fontWeight: 700,
+        color: isFree ? "#27ae60" : "#c2621a",
+        fontFamily: "'DM Mono', monospace",
+      }}>
+        {isFree ? "FREE" : kes(shippingCost)}
+      </span>
+    </div>
+  );
+}
+
 function OrderCard({ order }) {
   const [expanded, setExpanded] = useState(false);
   const items = order.items || [];
@@ -85,22 +137,42 @@ function OrderCard({ order }) {
 
   const addr = order.address;
   const addrLine = addr
-    ? `${addr.address_line1}${addr.city ? ", " + addr.city : ""}`
+    ? `${addr.address_line1}${addr.city ? ", " + addr.city : ""}${addr.county ? ", " + addr.county : ""}`
     : null;
+
+  const hasReceipt = ["completed", "delivered", "processing"].includes(order.status?.toLowerCase());
+
+  const handleReceipt = () => {
+    const token = localStorage.getItem("access_token");
+    fetch(`${API_BASE_URL}/api/payments/receipt/${order.id}/`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(res => {
+        if (!res.ok) throw new Error("No receipt");
+        return res.blob();
+      })
+      .then(blob => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `receipt-${order.order_number}.txt`;
+        a.click();
+        URL.revokeObjectURL(url);
+      })
+      .catch(() => alert("Receipt not available yet for this order."));
+  };
 
   return (
     <div style={{
-      background: "#fff",
-      borderRadius: 16,
+      background: "#fff", borderRadius: 16,
       border: "1px solid #ede8e0",
       boxShadow: "0 1px 4px rgba(26,17,8,0.05)",
-      overflow: "hidden",
-      transition: "box-shadow 0.2s",
+      overflow: "hidden", transition: "box-shadow 0.2s",
     }}
       onMouseEnter={e => e.currentTarget.style.boxShadow = "0 6px 20px rgba(26,17,8,0.09)"}
       onMouseLeave={e => e.currentTarget.style.boxShadow = "0 1px 4px rgba(26,17,8,0.05)"}
     >
-      {/* ── Header ── */}
+      {/* Header */}
       <div style={{
         display: "flex", flexWrap: "wrap",
         alignItems: "center", justifyContent: "space-between",
@@ -108,7 +180,6 @@ function OrderCard({ order }) {
         borderBottom: expanded ? "1px solid #f5f0ea" : "none",
         background: "#fdfaf7",
       }}>
-        {/* Left — order number + date */}
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <div style={{
             width: 40, height: 40, borderRadius: 10,
@@ -126,14 +197,17 @@ function OrderCard({ order }) {
             }}>
               {order.order_number ?? "—"}
             </div>
-            <div style={{ fontSize: 11, color: "#9a8878", marginTop: 2, display: "flex", alignItems: "center", gap: 4 }}>
-              <Calendar size={10} />
-              {date}
+            <div style={{ fontSize: 11, color: "#9a8878", marginTop: 2, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+              <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                <Calendar size={10} /> {date}
+              </span>
+              {order.shipping_zone && (
+                <ZoneBadge zone={order.shipping_zone} />
+              )}
             </div>
           </div>
         </div>
 
-        {/* Right — status + total + expand */}
         <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
           <StatusBadge status={order.status} />
           <div style={{
@@ -154,8 +228,6 @@ function OrderCard({ order }) {
               fontSize: 12, fontWeight: 600, cursor: "pointer",
               transition: "all 0.15s",
             }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = "#c2621a"; e.currentTarget.style.color = "#c2621a"; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = "#e8e2db"; e.currentTarget.style.color = expanded ? "#c2621a" : "#4a3f35"; }}
           >
             {expanded ? "Hide" : "Details"}
             <ArrowRight size={11} style={{ transform: expanded ? "rotate(90deg)" : "rotate(0)", transition: "transform 0.2s" }} />
@@ -163,12 +235,12 @@ function OrderCard({ order }) {
         </div>
       </div>
 
-      {/* ── Expandable details ── */}
+      {/* Expandable details */}
       {expanded && (
         <div style={{ padding: "0 20px 20px" }}>
 
           {/* Items */}
-          <div style={{ marginTop: 16, marginBottom: addrLine ? 16 : 0 }}>
+          <div style={{ marginTop: 16, marginBottom: 16 }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: "#9a8878", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>
               Items
             </div>
@@ -180,10 +252,7 @@ function OrderCard({ order }) {
                   borderBottom: i < items.length - 1 ? "1px solid #f5f0ea" : "none",
                 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <div style={{
-                      width: 6, height: 6, borderRadius: "50%",
-                      background: "#c2621a", flexShrink: 0,
-                    }} />
+                    <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#c2621a", flexShrink: 0 }} />
                     <span style={{ fontSize: 13, color: "#1a1108", fontWeight: 500 }}>
                       {item.product_name ?? item.product ?? "—"}
                     </span>
@@ -212,11 +281,15 @@ function OrderCard({ order }) {
               display: "flex", alignItems: "center", gap: 8,
               padding: "10px 14px", borderRadius: 10,
               background: "#fdf8f4", border: "1px solid #f5e8d8",
+              marginBottom: 14,
             }}>
               <MapPin size={13} color="#c2621a" />
               <span style={{ fontSize: 12, color: "#4a3f35", fontWeight: 500 }}>{addrLine}</span>
             </div>
           )}
+
+          {/* Shipping breakdown */}
+          <ShippingBreakdown order={order} />
 
           {/* Totals row */}
           <div style={{
@@ -225,20 +298,42 @@ function OrderCard({ order }) {
           }}>
             <div style={{ fontSize: 12, color: "#9a8878" }}>
               {items.length} {items.length === 1 ? "item" : "items"}
-              {n(order.shipping_cost) > 0 && (
-                <span style={{ marginLeft: 10 }}>
-                  + {kes(order.shipping_cost)} shipping
-                </span>
-              )}
             </div>
-            <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
-              <span style={{ fontSize: 12, color: "#9a8878" }}>Total</span>
-              <span style={{
-                fontSize: 17, fontWeight: 800, color: "#1a1108",
-                fontFamily: "'DM Mono', monospace", letterSpacing: "-0.02em",
-              }}>
-                {kes(order.total)}
-              </span>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              {hasReceipt && (
+                <button
+                  onClick={handleReceipt}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 5,
+                    padding: "6px 12px", borderRadius: 8,
+                    border: "1px solid #c2621a",
+                    background: "#fdf0e6", color: "#c2621a",
+                    fontSize: 12, fontWeight: 600, cursor: "pointer",
+                    transition: "all 0.15s",
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.background = "#f5d9c0"}
+                  onMouseLeave={e => e.currentTarget.style.background = "#fdf0e6"}
+                >
+                  <Download size={12} /> Download Receipt
+                </button>
+              )}
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2 }}>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
+                  <span style={{ fontSize: 12, color: "#9a8878" }}>Subtotal</span>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: "#4a3f35", fontFamily: "'DM Mono', monospace" }}>
+                    {kes(order.subtotal)}
+                  </span>
+                </div>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
+                  <span style={{ fontSize: 12, color: "#9a8878" }}>Total</span>
+                  <span style={{
+                    fontSize: 17, fontWeight: 800, color: "#1a1108",
+                    fontFamily: "'DM Mono', monospace", letterSpacing: "-0.02em",
+                  }}>
+                    {kes(order.total)}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -247,10 +342,8 @@ function OrderCard({ order }) {
   );
 }
 
-/* ─── Pagination ─────────────────────────────────────────────── */
 function Pagination({ current, total, onChange }) {
   if (total <= 1) return null;
-
   const pages = [];
   const start = Math.max(1, current - 2);
   const end   = Math.min(total, current + 2);
@@ -269,67 +362,37 @@ function Pagination({ current, total, onChange }) {
 
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 28 }}>
-      <button
-        style={{ ...btnStyle(false), opacity: current === 1 ? 0.4 : 1 }}
-        onClick={() => onChange(current - 1)}
-        disabled={current === 1}
-      >
+      <button style={{ ...btnStyle(false), opacity: current === 1 ? 0.4 : 1 }} onClick={() => onChange(current - 1)} disabled={current === 1}>
         <ChevronLeft size={15} />
       </button>
-
-      {start > 1 && (
-        <>
-          <button style={btnStyle(false)} onClick={() => onChange(1)}>1</button>
-          {start > 2 && <span style={{ color: "#9a8878", padding: "0 2px" }}>…</span>}
-        </>
-      )}
-
-      {pages.map(p => (
-        <button key={p} style={btnStyle(p === current)} onClick={() => onChange(p)}>{p}</button>
-      ))}
-
-      {end < total && (
-        <>
-          {end < total - 1 && <span style={{ color: "#9a8878", padding: "0 2px" }}>…</span>}
-          <button style={btnStyle(false)} onClick={() => onChange(total)}>{total}</button>
-        </>
-      )}
-
-      <button
-        style={{ ...btnStyle(false), opacity: current === total ? 0.4 : 1 }}
-        onClick={() => onChange(current + 1)}
-        disabled={current === total}
-      >
+      {start > 1 && <><button style={btnStyle(false)} onClick={() => onChange(1)}>1</button>{start > 2 && <span style={{ color: "#9a8878" }}>…</span>}</>}
+      {pages.map(p => <button key={p} style={btnStyle(p === current)} onClick={() => onChange(p)}>{p}</button>)}
+      {end < total && <>{end < total - 1 && <span style={{ color: "#9a8878" }}>…</span>}<button style={btnStyle(false)} onClick={() => onChange(total)}>{total}</button></>}
+      <button style={{ ...btnStyle(false), opacity: current === total ? 0.4 : 1 }} onClick={() => onChange(current + 1)} disabled={current === total}>
         <ChevronRight size={15} />
       </button>
     </div>
   );
 }
 
-/* ─── Filter Tab ─────────────────────────────────────────────── */
 function FilterTab({ label, count, active, onClick }) {
   return (
-    <button
-      onClick={onClick}
-      style={{
-        padding: "7px 14px", borderRadius: 8,
-        border: `1px solid ${active ? "#c2621a" : "#e8e2db"}`,
-        background: active ? "#fdf0e6" : "#fff",
-        color: active ? "#c2621a" : "#4a3f35",
-        fontSize: 13, fontWeight: active ? 700 : 500,
-        cursor: "pointer", display: "flex",
-        alignItems: "center", gap: 6,
-        transition: "all 0.15s", whiteSpace: "nowrap",
-      }}
-    >
+    <button onClick={onClick} style={{
+      padding: "7px 14px", borderRadius: 8,
+      border: `1px solid ${active ? "#c2621a" : "#e8e2db"}`,
+      background: active ? "#fdf0e6" : "#fff",
+      color: active ? "#c2621a" : "#4a3f35",
+      fontSize: 13, fontWeight: active ? 700 : 500,
+      cursor: "pointer", display: "flex", alignItems: "center", gap: 6,
+      transition: "all 0.15s", whiteSpace: "nowrap",
+    }}>
       {label}
       {count > 0 && (
         <span style={{
           background: active ? "#c2621a" : "#e8e2db",
           color: active ? "#fff" : "#4a3f35",
-          borderRadius: 10, fontSize: 10,
-          fontWeight: 700, padding: "1px 6px",
-          minWidth: 18, textAlign: "center",
+          borderRadius: 10, fontSize: 10, fontWeight: 700,
+          padding: "1px 6px", minWidth: 18, textAlign: "center",
         }}>
           {count}
         </span>
@@ -338,11 +401,10 @@ function FilterTab({ label, count, active, onClick }) {
   );
 }
 
-/* ─── Main Page ──────────────────────────────────────────────── */
 export default function OrdersPage() {
   const { orders, fetchUserOrders } = useAppContext();
-  const [page, setPage]           = useState(1);
-  const [filter, setFilter]       = useState("all");
+  const [page, setPage]     = useState(1);
+  const [filter, setFilter] = useState("all");
 
   useEffect(() => { fetchUserOrders(); }, []);
   useEffect(() => { setPage(1); }, [filter]);
@@ -351,10 +413,10 @@ export default function OrdersPage() {
   const activeOrders = orders.filter(o => ["pending", "processing", "shipped"].includes(o.status?.toLowerCase()));
 
   const FILTERS = [
-    { key: "all",        label: "All Orders" },
-    { key: "active",     label: "Active",     statuses: ["pending", "processing", "shipped"] },
-    { key: "completed",  label: "Completed",  statuses: ["completed", "delivered"] },
-    { key: "cancelled",  label: "Cancelled",  statuses: ["cancelled", "refunded"] },
+    { key: "all",       label: "All Orders" },
+    { key: "active",    label: "Active",    statuses: ["pending", "processing", "shipped"] },
+    { key: "completed", label: "Completed", statuses: ["completed", "delivered"] },
+    { key: "cancelled", label: "Cancelled", statuses: ["cancelled", "refunded"] },
   ];
 
   const filtered = filter === "all"
@@ -364,17 +426,12 @@ export default function OrdersPage() {
         return cfg?.statuses?.includes(o.status?.toLowerCase());
       });
 
-  const totalPages  = Math.ceil(filtered.length / PAGE_SIZE);
-  const paginated   = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const paginated  = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   return (
-    <div style={{
-      maxWidth: 780, margin: "0 auto",
-      padding: "36px 16px 60px",
-      fontFamily: "'Plus Jakarta Sans', sans-serif",
-    }}>
+    <div style={{ maxWidth: 780, margin: "0 auto", padding: "36px 16px 60px", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
 
-      {/* ── Page header ── */}
       <div style={{ marginBottom: 28 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
           <div style={{
@@ -393,37 +450,20 @@ export default function OrdersPage() {
         </p>
       </div>
 
-      {/* ── Stats ── */}
       {orders.length > 0 && (
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(3, 1fr)",
-          gap: 14, marginBottom: 28,
-        }}>
-          <StatCard icon={ShoppingBag} label="Total Orders"  value={orders.length}         accent="#c2621a" />
-          <StatCard icon={Truck}       label="Active"        value={activeOrders.length}    accent="#2980b9" />
-          <StatCard icon={CheckCircle} label="Total Spend"   value={`KES ${n(totalSpend).toLocaleString()}`} accent="#27ae60" />
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14, marginBottom: 28 }}>
+          <StatCard icon={ShoppingBag} label="Total Orders" value={orders.length}          accent="#c2621a" />
+          <StatCard icon={Truck}       label="Active"       value={activeOrders.length}     accent="#2980b9" />
+          <StatCard icon={CheckCircle} label="Total Spend"  value={`KES ${n(totalSpend).toLocaleString()}`} accent="#27ae60" />
         </div>
       )}
 
-      {/* ── Filter tabs ── */}
       {orders.length > 0 && (
-        <div style={{
-          display: "flex", gap: 8, flexWrap: "wrap",
-          marginBottom: 20,
-        }}>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 20 }}>
           {FILTERS.map(f => {
-            const count = f.key === "all"
-              ? orders.length
-              : orders.filter(o => f.statuses?.includes(o.status?.toLowerCase())).length;
+            const count = f.key === "all" ? orders.length : orders.filter(o => f.statuses?.includes(o.status?.toLowerCase())).length;
             return (
-              <FilterTab
-                key={f.key}
-                label={f.label}
-                count={f.key === "all" ? 0 : count}
-                active={filter === f.key}
-                onClick={() => setFilter(f.key)}
-              />
+              <FilterTab key={f.key} label={f.label} count={f.key === "all" ? 0 : count} active={filter === f.key} onClick={() => setFilter(f.key)} />
             );
           })}
           <div style={{ marginLeft: "auto", fontSize: 12, color: "#9a8878", alignSelf: "center" }}>
@@ -432,15 +472,13 @@ export default function OrdersPage() {
         </div>
       )}
 
-      {/* ── Orders list ── */}
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         {paginated.length > 0
           ? paginated.map(order => <OrderCard key={order.id} order={order} />)
           : (
             <div style={{
               background: "#fff", border: "1px solid #ede8e0",
-              borderRadius: 16, padding: "56px 24px",
-              textAlign: "center",
+              borderRadius: 16, padding: "56px 24px", textAlign: "center",
               boxShadow: "0 1px 4px rgba(26,17,8,0.04)",
             }}>
               <div style={{
@@ -455,18 +493,14 @@ export default function OrdersPage() {
                 {filter === "all" ? "No orders yet" : `No ${filter} orders`}
               </div>
               <div style={{ fontSize: 13, color: "#9a8878" }}>
-                {filter === "all"
-                  ? "Your purchases will appear here once you place an order."
-                  : "Try a different filter to see your orders."}
+                {filter === "all" ? "Your purchases will appear here once you place an order." : "Try a different filter to see your orders."}
               </div>
             </div>
           )
         }
       </div>
 
-      {/* ── Pagination ── */}
       <Pagination current={page} total={totalPages} onChange={setPage} />
-
     </div>
   );
 }

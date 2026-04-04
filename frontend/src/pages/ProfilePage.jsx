@@ -331,7 +331,7 @@ function AddressTab({ user }) {
     setLoading(true);
     try {
       const token = localStorage.getItem("access_token");
-      const res = await fetch(`${API_BASE_URL}/api/accounts/addresses/`, {
+      const res = await fetch(`${API_BASE_URL}/api/orders/addresses/`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ ...form, is_default: true }),

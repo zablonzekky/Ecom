@@ -359,7 +359,18 @@ export const AppProvider = ({ children }) => {
   };
 
   const isAuthenticated = () => !!user && !!localStorage.getItem("access_token");
-
+const fetchProductBySlug = async (slug) => {
+  try {
+    setIsLoading(true);
+    const res = await api.get(`/products/${slug}/`);
+    setSelectedProduct(res.data);
+  } catch (err) {
+    console.error(`Failed to fetch product "${slug}":`, err);
+    setSelectedProduct(null);
+  } finally {
+    setIsLoading(false);
+  }
+};
   const contextValue = {
     cart, addToCart, removeFromCart, updateCartItemQuantity, clearCart,
     getCartTotal, getCartItemsCount, orders, placeOrder, getOrderById,
@@ -367,7 +378,7 @@ export const AppProvider = ({ children }) => {
     fetchUserAddresses, user, setUser, login, loginWithTokens, logout,
     register, isAuthenticated, products, setProducts, selectedProduct,
     setSelectedProduct, categories, setCategories, isLoading, setIsLoading,
-    fetchProductsByCategory, currentCategory,
+   fetchProductsByCategory, currentCategory, fetchProductBySlug,
   };
 
   return (

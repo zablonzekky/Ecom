@@ -1,14 +1,60 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, BarChart, Bar
 } from 'recharts';
-import { DollarSign, ShoppingCart, Users, TrendingUp, Eye, Edit } from 'lucide-react';
+import { DollarSign, ShoppingCart, Users, TrendingUp, Eye, RefreshCw } from 'lucide-react';
 import { analyticsService, orderService } from '../../services';
-import { StatusBadge, LoadingState, StatCard } from '../../components/common';
+import { StatusBadge, LoadingState, StatCard, Modal } from '../../components/common';
 
 const COLORS = ['#c2621a', '#e8894a', '#f5b88a', '#2d7a4a', '#1a6fa8'];
+const STATUSES = ['pending', 'processing', 'shipped', 'delivered', 'completed', 'cancelled', 'refunded'];
+
+function UpdateStatusModal({ order, onClose, onUpdate }) {
+  const [status, setStatus] = useState(order?.status || '');
+  const [note, setNote] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await orderService.updateStatus(order.id, { status, note });
+      toast.success('Status updated');
+      onUpdate();
+      onClose();
+    } catch {
+      toast.error('Error updating status');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <div className="form-group mb-4">
+        <label className="form-label">New Status</label>
+        <select className="form-control" value={status} onChange={e => setStatus(e.target.value)} required>
+          {STATUSES.map(s => (
+            <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
+          ))}
+        </select>
+      </div>
+      <div className="form-group mb-4">
+        <label className="form-label">Note (optional)</label>
+        <textarea className="form-control" value={note} onChange={e => setNote(e.target.value)} rows={2} />
+      </div>
+      <div className="flex gap-3" style={{ justifyContent: 'flex-end' }}>
+        <button type="button" className="btn btn-outline" onClick={onClose}>Cancel</button>
+        <button type="submit" className="btn btn-primary" disabled={loading}>
+          {loading ? 'Updating...' : 'Update Status'}
+        </button>
+      </div>
+    </form>
+  );
+}
 
 export default function DashboardPage() {
   const navigate = useNavigate();
@@ -18,6 +64,8 @@ export default function DashboardPage() {
   const [topCustomers, setTopCustomers] = useState([]);
   const [recentOrders, setRecentOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [viewOrder, setViewOrder] = useState(null);
+  const [updateOrder, setUpdateOrder] = useState(null);
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -43,33 +91,25 @@ export default function DashboardPage() {
     fetchAll();
   }, []);
 
+  const refreshOrders = async () => {
+    try {
+      const res = await orderService.list({ page_size: 5 });
+      setRecentOrders(res.data.results || []);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   if (loading) return <LoadingState />;
 
   return (
     <div>
       {/* Stats Row */}
       <div className="grid-4 mb-6">
-        <StatCard
-          icon={DollarSign}
-          label="Total Sales"
-          value={`$${stats?.total_sales?.toLocaleString('en', { minimumFractionDigits: 2 }) || '0.00'}`}
-        />
-        <StatCard
-          icon={ShoppingCart}
-          label="Orders Count"
-          value={stats?.orders_count || 0}
-        />
-        <StatCard
-          icon={Users}
-          label="New Customers"
-          value={`${stats?.new_customers_pct || 0}%`}
-          badge="Last 30 days"
-        />
-        <StatCard
-          icon={TrendingUp}
-          label="Avg Order Value"
-          value={`$${stats?.avg_order_value?.toFixed(2) || '0.00'}`}
-        />
+        <StatCard icon={DollarSign} label="Total Sales" value={`$${stats?.total_sales?.toLocaleString('en', { minimumFractionDigits: 2 }) || '0.00'}`} />
+        <StatCard icon={ShoppingCart} label="Orders Count" value={stats?.orders_count || 0} />
+        <StatCard icon={Users} label="New Customers" value={`${stats?.new_customers_pct || 0}%`} badge="Last 30 days" />
+        <StatCard icon={TrendingUp} label="Avg Order Value" value={`$${stats?.avg_order_value?.toFixed(2) || '0.00'}`} />
       </div>
 
       {/* Charts Row */}
@@ -85,7 +125,7 @@ export default function DashboardPage() {
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border-light)" />
                 <XAxis dataKey="date" tick={{ fontSize: 10 }} tickFormatter={d => d.slice(5)} />
                 <YAxis tick={{ fontSize: 10 }} />
-                <Tooltip formatter={v => [`$${v}`, 'Sales']} labelFormatter={l => l} />
+                <Tooltip formatter={v => [`$${v}`, 'Sales']} />
                 <Line type="monotone" dataKey="sales" stroke="var(--primary)" strokeWidth={2} dot={false} />
               </LineChart>
             </ResponsiveContainer>
@@ -118,12 +158,7 @@ export default function DashboardPage() {
             <ResponsiveContainer width="100%" height={180}>
               <BarChart data={topCustomers} layout="vertical">
                 <XAxis type="number" tick={{ fontSize: 10 }} />
-                <YAxis
-                  type="category"
-                  dataKey="customer__first_name"
-                  tick={{ fontSize: 10 }}
-                  width={60}
-                />
+                <YAxis type="category" dataKey="customer__first_name" tick={{ fontSize: 10 }} width={60} />
                 <Tooltip formatter={v => [`$${v}`, 'Revenue']} />
                 <Bar dataKey="total_spent" fill="var(--primary)" radius={[0, 4, 4, 0]} />
               </BarChart>
@@ -152,17 +187,23 @@ export default function DashboardPage() {
             <tbody>
               {recentOrders.map(order => (
                 <tr key={order.id}>
-                  <td style={{ fontFamily: 'DM Mono, monospace', fontSize: 13 }}>{order.order_id}</td>
-                  <td>{order.customer_name}</td>
-                  <td><StatusBadge status={order.status} /></td>
-                  <td style={{ fontWeight: 600 }}>${parseFloat(order.total).toFixed(2)}</td>
+                  <td style={{ fontFamily: 'DM Mono, monospace', fontSize: 13 }}>{order.order_number ?? '—'}</td>
+                  <td>{order.customer_name ?? '—'}</td>
+                  <td><StatusBadge status={(order.status ?? 'pending').toLowerCase()} /></td>
+                  <td style={{ fontWeight: 600 }}>${parseFloat(order.total || 0).toFixed(2)}</td>
                   <td>
                     <div className="flex gap-2">
-                      <button className="btn btn-outline btn-sm" onClick={() => navigate(`/orders/${order.id}`)}>
+                      <button
+                        className="btn btn-outline btn-sm"
+                        onClick={(e) => { e.stopPropagation(); setViewOrder(order); }}
+                      >
                         <Eye size={13} /> View
                       </button>
-                      <button className="btn btn-outline btn-sm" onClick={() => navigate(`/orders/${order.id}`)}>
-                        <Edit size={13} /> Edit
+                      <button
+                        className="btn btn-primary btn-sm"
+                        onClick={(e) => { e.stopPropagation(); setUpdateOrder(order); }}
+                      >
+                        <RefreshCw size={13} /> Update
                       </button>
                     </div>
                   </td>
@@ -172,6 +213,29 @@ export default function DashboardPage() {
           </table>
         </div>
       </div>
+
+      {/* View Order Modal */}
+      <Modal open={!!viewOrder} onClose={() => setViewOrder(null)} title={`Order ${viewOrder?.order_number ?? ''}`}>
+        {viewOrder && (
+          <div>
+            <p><strong>Customer:</strong> {viewOrder.customer_name}</p>
+            <p><strong>Status:</strong> <StatusBadge status={viewOrder.status} /></p>
+            <p><strong>Total:</strong> ${parseFloat(viewOrder.total || 0).toFixed(2)}</p>
+            <p><strong>Date:</strong> {new Date(viewOrder.created_at).toLocaleString()}</p>
+          </div>
+        )}
+      </Modal>
+
+      {/* Update Status Modal */}
+      <Modal open={!!updateOrder} onClose={() => setUpdateOrder(null)} title="Update Order Status">
+        {updateOrder && (
+          <UpdateStatusModal
+            order={updateOrder}
+            onClose={() => setUpdateOrder(null)}
+            onUpdate={refreshOrders}
+          />
+        )}
+      </Modal>
     </div>
   );
 }

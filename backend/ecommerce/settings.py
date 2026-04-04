@@ -159,6 +159,8 @@ REST_AUTH = {
     "JWT_AUTH_COOKIE": None,
     "JWT_AUTH_REFRESH_COOKIE": None,
     "OLD_PASSWORD_FIELD_ENABLED": True,
+    "PASSWORD_RESET_SERIALIZER": "accounts.serializers.CustomPasswordResetSerializer",
+    "PASSWORD_RESET_CONFIRM_SERIALIZER": "accounts.serializers.CustomPasswordResetConfirmSerializer",
     "PASSWORD_RESET_USE_SITES_DOMAIN": False,
     "PASSWORD_RESET_URL_GENERATOR": "accounts.utils.custom_password_reset_url_generator",
 }

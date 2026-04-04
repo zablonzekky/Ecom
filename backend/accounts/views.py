@@ -7,7 +7,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.authtoken.models import Token
+from rest_framework_simplejwt.tokens import RefreshToken  # unified: JWT only
 
 from orders.models import Order
 from products.models import Product
@@ -23,23 +23,23 @@ from .serializers import (
 User = get_user_model()
 
 
-# ✅ SOCIAL AUTH TOKEN
+# SOCIAL AUTH — swaps session cookie (from OAuth callback) for JWT tokens
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def social_auth_token(request):
-    """
-    Swap session auth → DRF token for React
-    """
-    token, _ = Token.objects.get_or_create(user=request.user)
+    refresh = RefreshToken.for_user(request.user)
     return Response({
-        "token": token.key,
+        "tokens": {
+            "refresh": str(refresh),
+            "access": str(refresh.access_token),
+        },
         "email": request.user.email,
         "first_name": request.user.first_name,
         "last_name": request.user.last_name,
     })
 
 
-# ✅ REGISTER
+# REGISTER
 class RegisterView(APIView):
     permission_classes = [AllowAny]
 
@@ -49,12 +49,12 @@ class RegisterView(APIView):
             user = serializer.save()
             return Response(
                 serializer.to_representation(user),
-                status=status.HTTP_201_CREATED
+                status=status.HTTP_201_CREATED,
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-# ✅ USER PROFILE
+# USER PROFILE
 class UserProfileView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -65,18 +65,18 @@ class UserProfileView(APIView):
         serializer = UserProfileUpdateSerializer(
             request.user,
             data=request.data,
-            context={"request": request}
+            context={"request": request},
         )
         if serializer.is_valid():
             serializer.save()
             return Response({
-                'message': 'Profile updated successfully',
-                'user': UserProfileSerializer(request.user).data
+                "message": "Profile updated successfully.",
+                "user": UserProfileSerializer(request.user).data,
             })
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-# ✅ NEWSLETTER
+# NEWSLETTER
 class NewsletterSubscribeView(APIView):
     permission_classes = [AllowAny]
 
@@ -85,17 +85,14 @@ class NewsletterSubscribeView(APIView):
         serializer.is_valid(raise_exception=True)
 
         email = serializer.validated_data["email"]
-
         existing = NewsletterSubscription.objects.filter(email=email).first()
 
         if existing:
             if existing.is_active:
                 return Response(
                     {"email": ["Already subscribed."]},
-                    status=status.HTTP_400_BAD_REQUEST
+                    status=status.HTTP_400_BAD_REQUEST,
                 )
-
-            # Reactivate
             existing.is_active = True
             existing.save(update_fields=["is_active"])
             subscription = existing
@@ -111,12 +108,12 @@ class NewsletterSubscribeView(APIView):
         )
 
         return Response(
-            {"success": True, "message": "Subscription successful"},
-            status=status.HTTP_201_CREATED
+            {"success": True, "message": "Subscription successful."},
+            status=status.HTTP_201_CREATED,
         )
 
 
-# ✅ CONTACT
+# CONTACT
 class ContactMessageView(APIView):
     permission_classes = [AllowAny]
 
@@ -135,12 +132,12 @@ class ContactMessageView(APIView):
         )
 
         return Response(
-            {"success": True, "message": "Message sent successfully"},
-            status=status.HTTP_201_CREATED
+            {"success": True, "message": "Message sent successfully."},
+            status=status.HTTP_201_CREATED,
         )
 
 
-# ✅ ADMIN DASHBOARD
+# ADMIN DASHBOARD
 class AdminDashboardView(APIView):
     permission_classes = [IsAuthenticated, IsAdminUser]
 
@@ -154,7 +151,7 @@ class AdminDashboardView(APIView):
         })
 
 
-# ✅ ADMIN USERS
+# ADMIN USERS
 class AdminUserViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = User.objects.order_by("-date_joined")
     serializer_class = UserProfileSerializer

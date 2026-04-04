@@ -63,22 +63,31 @@ function NavItem({ item, collapsed }) {
   const isActive = location.pathname === item.path ||
     location.pathname.startsWith(item.path + '/');
 
+  const content = (
+    <>
+      <item.icon size={19} className="nav-icon" />
+      {!collapsed && (
+        <>
+          <span className="nav-label">{item.label}</span>
+          {item.children && (
+            <span className="nav-chevron">
+              {open ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+            </span>
+          )}
+        </>
+      )}
+    </>
+  );
+
   if (item.children) {
     return (
-      <div>
+      <div className="nav-group">
         <button
           className={`nav-item ${isActive ? 'nav-item-active' : ''}`}
-          onClick={() => setOpen(o => !o)}
+          onClick={() => !collapsed && setOpen(o => !o)}
+          title={collapsed ? item.label : ""}
         >
-          <item.icon size={18} />
-          {!collapsed && (
-            <>
-              <span className="nav-label">{item.label}</span>
-              <span className="nav-chevron">
-                {open ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-              </span>
-            </>
-          )}
+          {content}
         </button>
         {open && !collapsed && (
           <div className="nav-children">
@@ -102,10 +111,10 @@ function NavItem({ item, collapsed }) {
     <NavLink
       to={item.path}
       className={({ isActive }) => `nav-item ${isActive ? 'nav-item-active' : ''}`}
+      title={collapsed ? item.label : ""}
       end
     >
-      <item.icon size={18} />
-      {!collapsed && <span className="nav-label">{item.label}</span>}
+      {content}
     </NavLink>
   );
 }
@@ -118,10 +127,10 @@ export default function Sidebar({ collapsed, onToggle }) {
           <div className="logo-icon">
             <Store size={20} />
           </div>
-          {!collapsed && <span className="logo-text">CE-Commerce</span>}
+          {!collapsed && <span className="logo-text">Ecombay</span>}
         </div>
-        <button className="sidebar-toggle" onClick={onToggle}>
-          <ChevronRight size={16} className={collapsed ? '' : 'rotate-180'} />
+        <button className="sidebar-toggle-btn" onClick={onToggle}>
+          <ChevronRight size={16} className={collapsed ? "" : "rotate-180"} />
         </button>
       </div>
 
@@ -132,114 +141,175 @@ export default function Sidebar({ collapsed, onToggle }) {
       </nav>
 
       <style>{`
+        :root {
+          --sidebar-dark: #1a1817; /* Deep Charcoal-Brown */
+          --sidebar-item-bg: rgba(255, 255, 255, 0.04);
+          --accent-orange: #d97706; /* Matches your UI toggle orange */
+          --text-muted: #a39e9b;
+          --text-bright: #edeae8;
+        }
+
         .sidebar {
-          width: 200px;
-          background: var(--sidebar-bg);
+          width: 220px;
+          background: var(--sidebar-dark);
           display: flex;
           flex-direction: column;
-          transition: width 0.25s ease;
+          transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
           overflow: hidden;
           flex-shrink: 0;
+          height: 100vh;
+          border-right: 1px solid rgba(255,255,255,0.05);
         }
-        .sidebar-collapsed { width: 60px; }
+        
+        .sidebar-collapsed { 
+          width: 68px; 
+        }
 
         .sidebar-header {
           display: flex;
           align-items: center;
+          padding: 24px 16px;
           justify-content: space-between;
-          padding: 16px 12px;
-          border-bottom: 1px solid rgba(255,255,255,0.06);
+          position: relative;
+        }
+
+        .sidebar-collapsed .sidebar-header {
+          justify-content: center;
+          padding: 24px 0;
         }
 
         .sidebar-logo {
           display: flex;
           align-items: center;
-          gap: 10px;
-          overflow: hidden;
+          gap: 12px;
         }
 
         .logo-icon {
-          width: 34px;
-          height: 34px;
-          background: var(--primary);
+          width: 36px;
+          height: 36px;
+          background: var(--accent-orange);
           border-radius: 8px;
           display: flex;
           align-items: center;
           justify-content: center;
           color: white;
           flex-shrink: 0;
+          box-shadow: 0 4px 12px rgba(217, 119, 6, 0.2);
         }
 
         .logo-text {
           font-size: 15px;
           font-weight: 700;
-          color: white;
+          color: var(--text-bright);
           white-space: nowrap;
+          letter-spacing: -0.02em;
         }
 
-        .sidebar-toggle {
-          background: transparent;
-          border: none;
-          color: var(--sidebar-text);
+        .sidebar-toggle-btn {
+          background: rgba(255,255,255,0.05);
+          border: 1px solid rgba(255,255,255,0.1);
+          color: var(--text-muted);
           cursor: pointer;
           padding: 4px;
-          border-radius: 4px;
+          border-radius: 6px;
           display: flex;
-          transition: background var(--transition);
-          flex-shrink: 0;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.2s;
         }
-        .sidebar-toggle:hover { background: rgba(255,255,255,0.08); }
+
+        .sidebar-collapsed .sidebar-toggle-btn {
+          position: absolute;
+          bottom: -15px;
+          background: var(--sidebar-dark);
+          z-index: 10;
+        }
+        
+        .sidebar-toggle-btn:hover { background: rgba(255,255,255,0.1); color: white; }
         .rotate-180 { transform: rotate(180deg); }
 
         .sidebar-nav {
           flex: 1;
-          padding: 10px 8px;
+          padding: 10px;
           overflow-y: auto;
           overflow-x: hidden;
+        }
+
+        .sidebar-collapsed .sidebar-nav {
+          padding: 10px 6px;
         }
 
         .nav-item {
           display: flex;
           align-items: center;
-          gap: 10px;
-          padding: 9px 10px;
+          padding: 10px 12px;
           border-radius: 8px;
-          color: var(--sidebar-text);
+          color: var(--text-muted);
           text-decoration: none;
-          font-size: 13.5px;
-          font-weight: 500;
-          cursor: pointer;
+          transition: all 0.2s ease;
+          margin-bottom: 2px;
           border: none;
           background: transparent;
           width: 100%;
-          text-align: left;
-          transition: all var(--transition);
-          margin-bottom: 2px;
+          cursor: pointer;
           font-family: inherit;
         }
-        .nav-item:hover { background: var(--sidebar-hover); color: white; }
-        .nav-item-active { background: var(--sidebar-hover); color: var(--primary-light) !important; }
 
-        .nav-label { flex: 1; white-space: nowrap; overflow: hidden; }
-        .nav-chevron { color: var(--sidebar-text); opacity: 0.6; flex-shrink: 0; }
+        .sidebar-collapsed .nav-item {
+          justify-content: center;
+          padding: 12px 0;
+        }
+
+        .nav-icon { flex-shrink: 0; transition: transform 0.2s; }
+
+        .nav-item:hover { 
+          background: var(--sidebar-item-bg); 
+          color: var(--text-bright); 
+        }
+
+        .nav-item-active { 
+          background: rgba(217, 119, 6, 0.1) !important; 
+          color: var(--accent-orange) !important; 
+        }
+        
+        .nav-item-active .nav-icon {
+          transform: scale(1.1);
+        }
+
+        .nav-label {
+          margin-left: 12px;
+          flex: 1;
+          white-space: nowrap;
+          font-size: 13.5px;
+          font-weight: 500;
+          text-align: left;
+        }
+
+        .nav-chevron { margin-left: auto; opacity: 0.4; }
 
         .nav-children {
-          padding-left: 36px;
-          padding-bottom: 4px;
+          margin-left: 22px;
+          padding-left: 16px;
+          border-left: 1px solid rgba(255,255,255,0.05);
+          margin-top: 4px;
+          margin-bottom: 8px;
         }
 
         .nav-child {
           display: block;
-          padding: 7px 10px;
-          border-radius: 6px;
-          color: rgba(212, 196, 176, 0.7);
+          padding: 6px 0;
+          color: #7a7471;
           text-decoration: none;
           font-size: 13px;
-          transition: all var(--transition);
-          margin-bottom: 1px;
+          transition: color 0.2s;
         }
-        .nav-child:hover { color: white; background: rgba(255,255,255,0.06); }
-        .nav-child-active { color: var(--primary-light) !important; }
+
+        .nav-child:hover { color: var(--text-bright); }
+        .nav-child-active { color: var(--accent-orange) !important; font-weight: 600; }
+        
+        /* Custom Scrollbar for the warm theme */
+        .sidebar-nav::-webkit-scrollbar { width: 4px; }
+        .sidebar-nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.05); border-radius: 10px; }
       `}</style>
     </aside>
   );

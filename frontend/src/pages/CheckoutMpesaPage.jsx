@@ -9,28 +9,25 @@ export default function CheckoutMpesaPage() {
   const navigate = useNavigate();
   const [phoneNumber, setPhoneNumber] = useState("");
   const [address, setAddress] = useState({
-    full_name: "",
-    phone_number: "",
-    address_line1: "",
-    address_line2: "",
-    city: "",
-    county: "",
-    postal_code: "",
+    full_name: "", phone_number: "", address_line1: "",
+    address_line2: "", city: "", county: "", postal_code: "",
   });
   const [processing, setProcessing] = useState(false);
 
-  const BASE = `${API_BASE_URL}/api`;  // ✅ single fix point
-
+  const BASE = `${API_BASE_URL}/api`;
   const formatPhone = (value) => value.replace(/\D/g, "").replace(/^0/, "254");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setProcessing(true);
+    let orderId = null;
+
     try {
       const order = await placeOrder({
         address,
         items: cart.map((i) => ({ product_id: i.id, quantity: i.quantity })),
       });
+      orderId = order.id;
 
       const token = localStorage.getItem("access_token");
 
@@ -41,7 +38,7 @@ export default function CheckoutMpesaPage() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          order_id: order.id,
+          order_id: orderId,
           phone_number: formatPhone(phoneNumber),
         }),
       });
@@ -51,20 +48,19 @@ export default function CheckoutMpesaPage() {
       showSuccess("M-PESA prompt sent. Complete payment on your phone.");
 
       for (let i = 0; i < 20; i += 1) {
-        const statusRes = await fetch(`${BASE}/payments/status/${order.id}/`, {
+        const statusRes = await fetch(`${BASE}/payments/status/${orderId}/`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const statusData = await statusRes.json();
 
         if (statusData.status === "completed") {
-          showSuccess("Payment successful.");
-          window.open(`${BASE}/payments/receipt/${order.id}/`, "_blank");
+          showSuccess("Payment successful!");
           navigate("/orders");
           return;
         }
 
         if (statusData.status === "failed") {
-          await fetch(`${BASE}/orders/${order.id}/cancel/`, {
+          await fetch(`${BASE}/orders/${orderId}/cancel/`, {
             method: "POST",
             headers: { Authorization: `Bearer ${token}` },
           });
@@ -74,7 +70,10 @@ export default function CheckoutMpesaPage() {
         await new Promise((r) => setTimeout(r, 2000));
       }
 
-      throw new Error("Payment confirmation timed out.");
+      // Timeout — don't cancel, redirect to orders
+      showSuccess("Payment is being confirmed. Check your orders for status.");
+      navigate("/orders");
+
     } catch (err) {
       showError(err.message || "Payment failed");
     } finally {
@@ -90,7 +89,7 @@ export default function CheckoutMpesaPage() {
           <input
             key={key}
             required={!["address_line2", "postal_code"].includes(key)}
-            placeholder={key.replace("_", " ")}
+            placeholder={key.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}
             value={address[key]}
             onChange={(e) => setAddress({ ...address, [key]: e.target.value })}
             className="w-full border rounded-md px-3 py-2"
@@ -105,7 +104,7 @@ export default function CheckoutMpesaPage() {
         />
         <button
           disabled={processing}
-          className="w-full bg-blue-600 text-white py-2.5 rounded-md"
+          className="w-full bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white py-2.5 rounded-md font-bold transition-all"
         >
           {processing ? "Processing..." : "Pay with M-PESA"}
         </button>
