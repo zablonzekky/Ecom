@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React, { useState, useEffect } from "react";
 import { useAppContext } from "../context/AppContext";
 import {
@@ -6,7 +7,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || "https://ecom-426a.onrender.com/api";
+const API_BASE_URL = process.env.REACT_APP_API_URL || "https://ecombay.onrender.com/api";
 
 /* ─── Tab definitions ────────────────────────────────────────── */
 const TABS = [

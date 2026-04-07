@@ -4,11 +4,10 @@ import { authService } from '../services';
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
+  const [user, setUser]       = useState(null);
   const [loading, setLoading] = useState(true);
 
   const loadUser = useCallback(async () => {
-    // FIX: use admin_access_token — completely separate from storefront token
     const token = localStorage.getItem('admin_access_token');
 
     if (!token) {
@@ -25,7 +24,6 @@ export function AuthProvider({ children }) {
       ]);
       setUser(res.data);
     } catch (err) {
-      // Clear only admin keys — never touch storefront tokens
       localStorage.removeItem('admin_access_token');
       localStorage.removeItem('admin_refresh_token');
       localStorage.removeItem('admin_user');
@@ -40,8 +38,6 @@ export function AuthProvider({ children }) {
   const login = async (credentials) => {
     const res = await authService.login(credentials);
     const { access, refresh, user: userData } = res.data;
-
-    // FIX: store under admin_* keys — never collides with storefront
     localStorage.setItem('admin_access_token', access);
     localStorage.setItem('admin_refresh_token', refresh);
     localStorage.setItem('admin_user', JSON.stringify(userData));
@@ -61,7 +57,14 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, setUser }}>
+    <AuthContext.Provider value={{
+      user,
+      loading,
+      login,
+      logout,
+      setUser,
+      isAuthenticated: !!user,  // ← added
+    }}>
       {children}
     </AuthContext.Provider>
   );

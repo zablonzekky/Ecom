@@ -243,7 +243,7 @@ export const AppProvider = ({ children }) => {
 
       let userData = null;
       try {
-        const profileResponse = await fetch(`${BASE}/auth/profile/`, {
+        const profileResponse = await fetch(`${BASE}/accounts/profile/`, {  // ← fixed
           headers: { Authorization: `Bearer ${data.access}` },
         });
         if (profileResponse.ok) {
@@ -271,29 +271,18 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  /**
-   * loginWithTokens — used by social auth (Google / Facebook).
-   * The backend returns { access, refresh, user } after we POST the
-   * provider access_token. We mirror exactly what login() does after
-   * receiving tokens, including a profile fetch fallback.
-   */
   const loginWithTokens = async (data) => {
     try {
       setIsLoading(true);
-
-      // data must contain at minimum: { access, refresh }
       if (!data?.access) throw new Error("No access token returned from social auth.");
 
       localStorage.setItem("access_token", data.access);
       localStorage.setItem("refresh_token", data.refresh);
 
-      // Try to use the user object the backend already returned
       let userData = data.user || null;
-
-      // If not included, fetch the profile — same fallback as login()
       if (!userData) {
         try {
-          const profileResponse = await fetch(`${BASE}/auth/profile/`, {
+          const profileResponse = await fetch(`${BASE}/accounts/profile/`, {  // ← fixed
             headers: { Authorization: `Bearer ${data.access}` },
           });
           if (profileResponse.ok) {
@@ -302,7 +291,6 @@ export const AppProvider = ({ children }) => {
         } catch (_) {}
       }
 
-      // Last resort: store minimal info so the app knows someone is logged in
       if (!userData) {
         userData = { token: data.access, refreshToken: data.refresh };
       }
@@ -359,18 +347,20 @@ export const AppProvider = ({ children }) => {
   };
 
   const isAuthenticated = () => !!user && !!localStorage.getItem("access_token");
-const fetchProductBySlug = async (slug) => {
-  try {
-    setIsLoading(true);
-    const res = await api.get(`/products/${slug}/`);
-    setSelectedProduct(res.data);
-  } catch (err) {
-    console.error(`Failed to fetch product "${slug}":`, err);
-    setSelectedProduct(null);
-  } finally {
-    setIsLoading(false);
-  }
-};
+
+  const fetchProductBySlug = async (slug) => {
+    try {
+      setIsLoading(true);
+      const res = await api.get(`/products/${slug}/`);
+      setSelectedProduct(res.data);
+    } catch (err) {
+      console.error(`Failed to fetch product "${slug}":`, err);
+      setSelectedProduct(null);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const contextValue = {
     cart, addToCart, removeFromCart, updateCartItemQuantity, clearCart,
     getCartTotal, getCartItemsCount, orders, placeOrder, getOrderById,
@@ -378,7 +368,7 @@ const fetchProductBySlug = async (slug) => {
     fetchUserAddresses, user, setUser, login, loginWithTokens, logout,
     register, isAuthenticated, products, setProducts, selectedProduct,
     setSelectedProduct, categories, setCategories, isLoading, setIsLoading,
-   fetchProductsByCategory, currentCategory, fetchProductBySlug,
+    fetchProductsByCategory, currentCategory, fetchProductBySlug,
   };
 
   return (

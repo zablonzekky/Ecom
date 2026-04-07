@@ -16,7 +16,6 @@ function    ProtectedRoute({ children }) {
     );
   }
   if (!user) {
-    // Redirect to login page with return url
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 

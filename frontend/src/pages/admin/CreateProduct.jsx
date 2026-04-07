@@ -144,14 +144,9 @@ export default function CreateProduct() {
         .replace(/\s+/g, "-")
         .replace(/-+/g, "-");
       fd.append("slug", slug);
-
-      // Image — matches the ListField 'uploaded_images' in the serializer
       if (imageFile) {
         fd.append("uploaded_images", imageFile);
       }
-
-      // Sizes — send as a JSON string so DRF can parse it reliably
-      // The view reads 'sizes_json' and creates Size objects manually
       if (
         !NO_SIZE_TYPES.includes(form.product_type) &&
         selectedSizes.length > 0

@@ -4,7 +4,6 @@ import { Star, Check, X, Trash2, Tag, Bell, Activity } from 'lucide-react';
 import { reviewService, discountService, notificationService } from '../services';
 import { StatusBadge, LoadingState, Pagination, Modal, ConfirmModal, EmptyState } from '../components/common';
 import toast from 'react-hot-toast';
-// ===================== DISCOUNTS PAGE =====================
 function DiscountForm({ initial, onSubmit, onClose, loading }) {
   const [form, setForm] = useState(initial || {
     code: '', description: '', discount_type: 'percentage',

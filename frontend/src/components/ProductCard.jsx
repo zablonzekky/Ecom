@@ -15,15 +15,12 @@ function ProductCard({ product, viewMode = "grid" }) {
 
   const handleAddToCart = (e) => {
     e.stopPropagation();
-    
-    // Add to cart with default size
-    const defaultSize = product.sizes && product.sizes.length > 0 
-      ? product.sizes[0].value 
-      : "Standard";
-    
+    const defaultSize =
+      product.sizes && product.sizes.length > 0
+        ? product.sizes[0].value
+        : "Standard";
+
     addToCart(product, defaultSize, 1);
-    
-    // Show notification
     setShowAddedNotif(true);
     setTimeout(() => setShowAddedNotif(false), 2000);
   };
@@ -35,11 +32,14 @@ function ProductCard({ product, viewMode = "grid" }) {
 
   const price = product.current_price || product.price;
   const originalPrice = product.discount_percentage > 0 ? product.price : null;
-  const stockStatus = product.stock > 10 ? "In Stock" : product.stock > 0 ? "Low Stock" : "Out of Stock";
+  const stockStatus =
+    product.stock > 10
+      ? "In Stock"
+      : product.stock > 0
+        ? "Low Stock"
+        : "Out of Stock";
   const isLowStock = product.stock > 0 && product.stock <= 10;
   const isOutOfStock = product.stock === 0;
-
-  // List view layout
   if (viewMode === "list") {
     return (
       <div
@@ -116,8 +116,8 @@ function ProductCard({ product, viewMode = "grid" }) {
                   isOutOfStock
                     ? "bg-red-100 text-red-700"
                     : isLowStock
-                    ? "bg-orange-100 text-orange-700"
-                    : "bg-green-100 text-green-700"
+                      ? "bg-orange-100 text-orange-700"
+                      : "bg-green-100 text-green-700"
                 }`}
               >
                 {stockStatus}
@@ -150,8 +150,6 @@ function ProductCard({ product, viewMode = "grid" }) {
       </div>
     );
   }
-
-  // Grid view layout (default)
   return (
     <div
       onClick={handleClick}
@@ -255,8 +253,8 @@ function ProductCard({ product, viewMode = "grid" }) {
               isOutOfStock
                 ? "bg-red-100 text-red-700"
                 : isLowStock
-                ? "bg-orange-100 text-orange-700"
-                : "bg-green-100 text-green-700"
+                  ? "bg-orange-100 text-orange-700"
+                  : "bg-green-100 text-green-700"
             }`}
           >
             {stockStatus}

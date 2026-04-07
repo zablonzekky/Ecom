@@ -1,10 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Search, Bell, ChevronDown, LogOut, User, Settings } from 'lucide-react';
 import { useAuth } from '../../context/Authcontext';
+import { useNotifications } from '../../context/NotificationContext';
 import { useNavigate } from 'react-router-dom';
 
 export default function Topbar() {
   const { user, logout } = useAuth();
+  const { unreadCount } = useNotifications();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
@@ -46,7 +48,11 @@ export default function Topbar() {
           onClick={() => navigate('admin/notifications')}
         >
           <Bell size={18} />
-          <span className="notif-dot" />
+          {unreadCount > 0 && (
+            <span className="notif-badge">
+              {unreadCount > 99 ? '99+' : unreadCount}
+            </span>
+          )}
         </button>
 
         <div className="user-menu" ref={menuRef}>
@@ -99,13 +105,21 @@ export default function Topbar() {
         .topbar-actions { display: flex; align-items: center; gap: 10px; }
 
         .notif-btn { position: relative; }
-        .notif-dot {
+        .notif-badge {
           position: absolute;
-          top: 6px; right: 6px;
-          width: 7px; height: 7px;
-          background: var(--primary);
-          border-radius: 50%;
-          border: 1px solid white;
+          top: 2px; right: 2px;
+          min-width: 17px; height: 17px;
+          background: var(--danger);
+          color: #fff;
+          border-radius: 999px;
+          font-size: 10px;
+          font-weight: 700;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0 4px;
+          border: 1.5px solid var(--surface);
+          line-height: 1;
         }
 
         .user-menu { position: relative; }

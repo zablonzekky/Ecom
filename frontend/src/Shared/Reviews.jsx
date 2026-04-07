@@ -3,8 +3,6 @@ import { Star, Check, X, Trash2, Tag, Bell, Activity } from 'lucide-react';
 import { reviewService, discountService, notificationService } from '../services';
 import { StatusBadge, LoadingState, Pagination, Modal, ConfirmModal, EmptyState } from '../components/common';
 import toast from 'react-hot-toast';
-
-// ===================== REVIEWS PAGE =====================
 export function ReviewsPage() {
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);

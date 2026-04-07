@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { Outlet } from 'react-router-dom';
-import Sidebar from '../../components/Layout/Sidebar';
-import Topbar from '../../components/Layout/Topbar';
+import React, { useState } from "react";
+import { Outlet } from "react-router-dom";
+import Sidebar from "../../components/Layout/Sidebar";
+import Topbar from "../../components/Layout/Topbar";
 
 function AdminLayout() {
   const [collapsed, setCollapsed] = useState(false);
@@ -39,7 +39,10 @@ function AdminLayout() {
       `}</style>
 
       <div className="admin-layout">
-        <Sidebar collapsed={collapsed} onToggle={() => setCollapsed(!collapsed)} />
+        <Sidebar
+          collapsed={collapsed}
+          onToggle={() => setCollapsed(!collapsed)}
+        />
         <div className="main-content">
           <Topbar />
           <div className="page-content">

@@ -37,7 +37,7 @@ function Footer() {
               </div>
               <div className="flex items-center gap-3 text-gray-400 text-sm">
                 <Mail size={18} className="text-blue-400 flex-shrink-0" />
-                <span>support@ecom.com</span>
+                <span>ewwabwoba@gmail.com</span>
               </div>
             </div>
           </div>

@@ -2,13 +2,9 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Search, Trash2, ExternalLink } from 'lucide-react';
 import { LoadingState, EmptyState, Pagination, ConfirmModal, Avatar } from '../../components/common';
 import toast from 'react-hot-toast';
-
-// Adjust this import path to wherever your axios instance / service lives
 import api from '../../services/api';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
-
-// ── provider badge colours ────────────────────────────────────────────────────
 const PROVIDER_STYLE = {
   google: { bg: '#fce8e6', color: '#c5221f', label: 'Google' },
   facebook: { bg: '#e7f0ff', color: '#1877f2', label: 'Facebook' },
@@ -32,16 +28,10 @@ function ProviderBadge({ provider }) {
     </span>
   );
 }
-
-// ── service helpers ───────────────────────────────────────────────────────────
-// These call Django-allauth's REST endpoints that expose social accounts.
-// Adjust the URLs to match whatever your backend exposes.
 const socialAccountService = {
   list: (params) => api.get('/api/admin/social-accounts/', { params }),
   delete: (id)   => api.delete(`/api/admin/social-accounts/${id}/`),
 };
-
-// ── main component ────────────────────────────────────────────────────────────
 export default function SocialAccountsPage() {
   const [accounts,    setAccounts]    = useState([]);
   const [loading,     setLoading]     = useState(true);

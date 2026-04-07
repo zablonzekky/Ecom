@@ -64,9 +64,6 @@ function LoginForm() {
       setLoading(false);
     }
   };
-
-  // --- GOOGLE LOGIN ---
-  // useGoogleLogin opens a popup, gets the access_token, then we POST it to backend
   const handleGoogleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
       setLoading(true);
@@ -88,9 +85,6 @@ function LoginForm() {
       showError("Google sign-in was cancelled or failed.");
     },
   });
-
-  // --- FACEBOOK LOGIN ---
-  // Uses the Facebook JS SDK loaded via window.FB
   const handleFacebookLogin = () => {
     if (!window.FB) {
       showError("Facebook SDK not loaded. Please refresh and try again.");
