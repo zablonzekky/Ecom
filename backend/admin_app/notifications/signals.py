@@ -22,7 +22,23 @@ def notify_admins(title, message, notification_type="info"):
     Notification.objects.bulk_create(notifications)
 
 
-# ── New order placed ──
+def _create_user_registered_notification(user):
+    """Shared helper — creates notification + activity log for any new user."""
+    notify_admins(
+        title="New User Registered",
+        message=f"{user.email} just created an account.",
+        notification_type="info",
+    )
+    ActivityLog.objects.create(
+        user=user,
+        action="registered",
+        resource_type="User",
+        resource_id=user.id,
+        description=f"New user registered: {user.email}",
+    )
+
+
+# ── New order placed ──────────────────────────────────────────────────────────
 @receiver(post_save, sender=Order)
 def order_notification(sender, instance, created, **kwargs):
     if created:
@@ -41,19 +57,32 @@ def order_notification(sender, instance, created, **kwargs):
         )
 
 
-# ── New user registered ──
+# ── New user registered (email/password signup) ───────────────────────────────
 @receiver(post_save, sender=User)
 def user_registered_notification(sender, instance, created, **kwargs):
-    if created:
-        notify_admins(
-            title="New User Registered",
-            message=f"{instance.email} just created an account.",
-            notification_type="info",
-        )
-        ActivityLog.objects.create(
-            user=instance,
-            action="registered",
-            resource_type="User",
-            resource_id=instance.id,
-            description=f"New user registered: {instance.email}",
-        )
+    # Skip if this user was created by social auth — allauth's user_signed_up
+    # signal handles that case to avoid double notifications
+    if created and not instance.socialaccount_set.exists():
+        _create_user_registered_notification(instance)
+
+
+# ── New user registered (Google / Facebook / any social signup) ───────────────
+try:
+    from allauth.socialaccount.signals import social_account_added
+    from allauth.account.signals import user_signed_up
+
+    @receiver(user_signed_up)
+    def user_signed_up_notification(request, user, **kwargs):
+        """
+        Fires for ALL new signups via allauth — both email and social.
+        We use this exclusively for social signups; email signups are
+        handled by post_save above (socialaccount_set will be empty at
+        post_save time for email users so there's no double-fire).
+        """
+        # Only handle social signups here — email signups already handled by post_save
+        sociallogin = kwargs.get('sociallogin')
+        if sociallogin:
+            _create_user_registered_notification(user)
+
+except ImportError:
+    pass

@@ -5,9 +5,6 @@ from rest_framework.permissions import IsAdminUser, IsAuthenticated
 
 from orders.models import Order
 from products.models import Product
-
-# --- Serializers ---
-
 class AdminProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product

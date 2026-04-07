@@ -18,7 +18,7 @@ class NotificationViewSet(viewsets.ModelViewSet):
         """
         if getattr(self, 'swagger_fake_view', False):
             return Notification.objects.none()
-            
+
         return Notification.objects.filter(user=self.request.user)
 
     @action(detail=False, methods=['post'])
@@ -37,7 +37,7 @@ class NotificationViewSet(viewsets.ModelViewSet):
         if not notification.is_read:
             notification.is_read = True
             notification.save(update_fields=['is_read'])
-        
+
         serializer = self.get_serializer(notification)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -47,8 +47,17 @@ class ActivityLogViewSet(viewsets.ReadOnlyModelViewSet):
     Admin-only view to track system activities.
     Uses select_related for 'user' to avoid N+1 query issues.
     """
-    queryset = ActivityLog.objects.select_related('user').all()
     serializer_class = ActivityLogSerializer
     permission_classes = [IsAdminUser]
     filter_backends = [filters.SearchFilter]
     search_fields = ['user__email', 'description', 'action']
+
+    def get_queryset(self):
+        """
+        Returns all activity logs.
+        Short-circuits during schema generation to avoid AnonymousUser errors.
+        """
+        if getattr(self, 'swagger_fake_view', False):
+            return ActivityLog.objects.none()
+
+        return ActivityLog.objects.select_related('user').all()

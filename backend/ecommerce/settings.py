@@ -10,10 +10,6 @@ from dotenv import load_dotenv
 load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-
-# =======================
-# Security
-# =======================
 SECRET_KEY = os.getenv(
     "DJANGO_SECRET_KEY",
     "unsafe-development-key-change-in-production",
@@ -25,10 +21,6 @@ ALLOWED_HOSTS = os.getenv(
     "ALLOWED_HOSTS",
     "localhost,127.0.0.1,ecom-426a.onrender.com,ecombay.onrender.com"
 ).split(",")
-
-# =======================
-# Applications
-# =======================
 INSTALLED_APPS = [
     # Django Core
     "django.contrib.admin",
@@ -74,12 +66,8 @@ INSTALLED_APPS = [
 ]
 
 SITE_ID = 1
-
-# =======================
-# Middleware
-# =======================
 MIDDLEWARE = [
-    "corsheaders.middleware.CorsMiddleware",          # MUST be first
+    "corsheaders.middleware.CorsMiddleware",  
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -94,10 +82,6 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = "ecommerce.urls"
 WSGI_APPLICATION = "ecommerce.wsgi.application"
-
-# =======================
-# Templates
-# =======================
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
@@ -113,30 +97,19 @@ TEMPLATES = [
         },
     },
 ]
-
-# =======================
 # Database
-# =======================
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
         "NAME": BASE_DIR / "ecommerce_db.sqlite3",
     }
 }
-
-# =======================
-# Authentication
-# =======================
 AUTH_USER_MODEL = "admin_users.User"
 
 AUTHENTICATION_BACKENDS = (
     "django.contrib.auth.backends.ModelBackend",
     "allauth.account.auth_backends.AuthenticationBackend",
 )
-
-# =======================
-# REST Framework
-# =======================
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
@@ -153,7 +126,6 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "admin_app.pagination.StandardResultsPagination",
     "PAGE_SIZE": 20,
 }
-
 REST_AUTH = {
     "USE_JWT": True,
     "JWT_AUTH_COOKIE": None,
@@ -164,10 +136,7 @@ REST_AUTH = {
     "PASSWORD_RESET_USE_SITES_DOMAIN": False,
     "PASSWORD_RESET_URL_GENERATOR": "accounts.utils.custom_password_reset_url_generator",
 }
-
-# =======================
 # Mpesa
-# =======================
 MPESA_CONSUMER_KEY = os.getenv("MPESA_CONSUMER_KEY")
 MPESA_CONSUMER_SECRET = os.getenv("MPESA_CONSUMER_SECRET")
 MPESA_SHORTCODE = os.getenv("MPESA_SHORTCODE")
@@ -176,10 +145,9 @@ MPESA_CALLBACK_URL = os.getenv("MPESA_CALLBACK_URL")
 MPESA_ENVIRONMENT = os.getenv("MPESA_ENVIRONMENT", "sandbox")
 
 # PayPal
-# =======================
 PAYPAL_CLIENT_ID = os.getenv("PAYPAL_CLIENT_ID")
 PAYPAL_CLIENT_SECRET = os.getenv("PAYPAL_CLIENT_SECRET")
-PAYPAL_ENVIRONMENT = os.getenv("PAYPAL_ENVIRONMENT", "sandbox") # 'sandbox' or 'live'
+PAYPAL_ENVIRONMENT = os.getenv("PAYPAL_ENVIRONMENT", "sandbox") 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
@@ -187,10 +155,7 @@ SIMPLE_JWT = {
     "BLACKLIST_AFTER_ROTATION": True,
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
-
-# =======================
 # Allauth
-# =======================
 ACCOUNT_ADAPTER = "accounts.adapter.CustomAccountAdapter"
 
 ACCOUNT_LOGIN_METHODS = {"email"}
@@ -205,7 +170,6 @@ ACCOUNT_DEFAULT_HTTP_PROTOCOL = "https"
 
 
 # Password Reset
-# =======================
 FRONTEND_URL = os.getenv(
     "FRONTEND_URL",
     "https://ecombay.onrender.com"
@@ -218,10 +182,7 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
-
-# =======================
 # Social Providers
-# =======================
 SOCIALACCOUNT_PROVIDERS = {
     "google": {
         "APP": {
@@ -242,19 +203,13 @@ SOCIALACCOUNT_PROVIDERS = {
 }
 SOCIALACCOUNT_EMAIL_AUTHENTICATION             = True
 SOCIALACCOUNT_EMAIL_AUTHENTICATION_AUTO_CONNECT = True
-SOCIALACCOUNT_LOGIN_ON_GET                     = True  # skip allauth confirm page
+SOCIALACCOUNT_LOGIN_ON_GET                     = True 
 
-# =======================
-# Internationalisation
-# =======================
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
 
-# =======================
-# Static & Media
-# =======================
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "static"]
@@ -265,35 +220,23 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# =======================
-# CORS
-# =======================
 CORS_ALLOWED_ORIGINS = os.getenv(
     "CORS_ALLOWED_ORIGINS",
     "http://localhost:3000,http://127.0.0.1:8000,https://ecombay.onrender.com"
 ).split(",")
 CORS_ALLOW_CREDENTIALS = True
 
-# =======================
-# CSRF
-# =======================
 CSRF_TRUSTED_ORIGINS = os.getenv(
     "CSRF_TRUSTED_ORIGINS",
     "https://ecombay.onrender.com,https://ecom-426a.onrender.com"
 ).split(",")
 
-# =======================
-# Production Security
-# =======================
 SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = "DENY"
-
-# =======================
 # Email
-# =======================
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = "smtp.gmail.com"
 EMAIL_PORT = 587
@@ -303,9 +246,6 @@ EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", EMAIL_HOST_USER)
 CONTACT_RECEIVER_EMAIL = os.getenv("CONTACT_RECEIVER_EMAIL", "ewwabwoba@gmail.com")
 
-# =======================
-# Logging
-# =======================
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -317,7 +257,7 @@ LOGGING = {
         "level": os.getenv("LOG_LEVEL", "INFO"),
     },
 }
-LOGIN_REDIRECT_URL = "http://localhost:3000/auth/callback"
+LOGIN_REDIRECT_URL = "http://localhost:3000/auth/callback,https://ecombay.onrender.com/"
 if DEBUG:
     import urllib3
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)

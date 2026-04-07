@@ -1,9 +1,12 @@
+from decimal import Decimal
+
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.db import transaction
 from django.utils.crypto import get_random_string
+
 from .models import Address, Order, OrderItem
 from .serializers import AddressSerializer, OrderSerializer, CreateOrderSerializer
 from .services import get_shipping_cost
@@ -15,17 +18,11 @@ class AddressViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        """
-        Filter addresses by the current user.
-        Includes a check for drf-yasg schema generation.
-        """
         if getattr(self, 'swagger_fake_view', False):
             return Address.objects.none()
-
         return Address.objects.filter(user=self.request.user)
 
     def perform_create(self, serializer):
-        # If this is set as default, unset other defaults for this user
         if serializer.validated_data.get('is_default'):
             Address.objects.filter(
                 user=self.request.user,
@@ -34,7 +31,6 @@ class AddressViewSet(viewsets.ModelViewSet):
         serializer.save(user=self.request.user)
 
     def perform_update(self, serializer):
-        # If updating an address to be default, unset others
         if serializer.validated_data.get('is_default'):
             Address.objects.filter(user=self.request.user, is_default=True).exclude(
                 id=serializer.instance.id
@@ -47,20 +43,14 @@ class OrderViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        """
-        Filter orders by current user and prefetch items for performance.
-        Includes a check for drf-yasg schema generation.
-        """
         if getattr(self, 'swagger_fake_view', False):
             return Order.objects.none()
-
         return Order.objects.filter(user=self.request.user).prefetch_related('items__product')
 
     @action(detail=False, methods=['post'], url_path='shipping-estimate')
     def shipping_estimate(self, request):
         """
         Returns a shipping cost estimate for a given address and subtotal.
-        Useful for showing the cost to the customer before they confirm checkout.
 
         Request body:
             address_id (int): ID of the saved address to deliver to
@@ -80,7 +70,7 @@ class OrderViewSet(viewsets.ModelViewSet):
         result = get_shipping_cost(
             city=address.city,
             county=address.county,
-            subtotal=float(subtotal),
+            subtotal=Decimal(str(subtotal)),  # ✅ Decimal from the start
         )
 
         if result.get('error'):
@@ -89,12 +79,12 @@ class OrderViewSet(viewsets.ModelViewSet):
         zone = result['zone']
         return Response({
             'shipping_cost': result['cost'],
-            'zone_name': zone.name,
-            'zone_type': zone.zone_type,
+            'zone_name': zone.name if zone else None,
+            'zone_type': zone.zone_type if zone else None,
             'reason': result['reason'],
             'free_shipping_threshold': (
                 float(zone.free_shipping_threshold)
-                if zone.free_shipping_threshold else None
+                if zone and zone.free_shipping_threshold else None
             ),
         })
 
@@ -108,29 +98,26 @@ class OrderViewSet(viewsets.ModelViewSet):
 
         data = serializer.validated_data
 
-        # Validate that the address belongs to the user
         try:
             address = Address.objects.get(id=data['address_id'], user=request.user)
         except Address.DoesNotExist:
             return Response({'error': 'Invalid address'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Calculate totals and prep items
-        subtotal = 0
+        subtotal = Decimal('0')  # ✅ Start as Decimal, not int 0
         order_items_data = []
 
         for item_data in data['items']:
             try:
                 product = Product.objects.get(id=item_data['product_id'], is_active=True)
 
-                # Check stock availability
                 if hasattr(product, 'stock') and product.stock < item_data['quantity']:
                     return Response(
                         {'error': f'Insufficient stock for {product.name}'},
                         status=status.HTTP_400_BAD_REQUEST
                     )
 
-                item_price = product.current_price
-                subtotal += item_price * item_data['quantity']
+                item_price = product.current_price  # Decimal from model
+                subtotal += item_price * item_data['quantity']  # ✅ Decimal + Decimal
 
                 order_items_data.append({
                     'product': product,
@@ -141,18 +128,17 @@ class OrderViewSet(viewsets.ModelViewSet):
             except Product.DoesNotExist:
                 return Response({'error': 'Invalid product'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Dynamic shipping calculation
         shipping_result = get_shipping_cost(
             city=address.city,
             county=address.county,
-            subtotal=float(subtotal),
+            subtotal=subtotal,  # ✅ Pass Decimal directly, no float() cast
         )
 
         if shipping_result.get('error'):
             return Response({'error': shipping_result['error']}, status=status.HTTP_400_BAD_REQUEST)
 
-        shipping_cost = shipping_result['cost']
-        total = subtotal + shipping_cost
+        shipping_cost = shipping_result['cost']          # Decimal from services.py
+        total = subtotal + shipping_cost                 # ✅ Decimal + Decimal
 
         order = Order.objects.create(
             user=request.user,
@@ -165,7 +151,6 @@ class OrderViewSet(viewsets.ModelViewSet):
             notes=data.get('notes', ''),
         )
 
-        # Save OrderItems and deduct stock
         for item_info in order_items_data:
             OrderItem.objects.create(order=order, **item_info)
 
@@ -190,7 +175,6 @@ class OrderViewSet(viewsets.ModelViewSet):
         order.status = 'cancelled'
         order.save()
 
-        # Restore stock to inventory
         for item in order.items.all():
             if hasattr(item.product, 'stock'):
                 item.product.stock += item.quantity

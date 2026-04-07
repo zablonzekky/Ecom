@@ -6,8 +6,7 @@ so it points to the React frontend instead of Django admin.
 """
 
 from django.conf import settings
-from allauth.account.adapter import DefaultAccountAdapter
-
+from allauth.account.adapter import DefaultAccountAdapter 
 
 class CustomAccountAdapter(DefaultAccountAdapter):
 
@@ -20,7 +19,7 @@ class CustomAccountAdapter(DefaultAccountAdapter):
         """
         Build the reset link using FRONTEND_URL + PASSWORD_RESET_CONFIRM_URL
         so the email contains e.g.:
-          https://ecom-frontend-9qeq.onrender.com/reset-password/<uid>/<token>
+          https://ecombay.onrender.com/reset-password/<uid>/<token>
         """
         uid = extra_context.get("uid", "")
         token = extra_context.get("token", "")
@@ -33,8 +32,6 @@ class CustomAccountAdapter(DefaultAccountAdapter):
         ).format(uid=uid, token=token)
 
         reset_url = f"{frontend}/{path}"
-
-        # Replace the default url in context so the email template uses ours
         extra_context["password_reset_url"] = reset_url
 
         super().send_password_reset_mail(user, email, extra_context)

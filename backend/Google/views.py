@@ -10,40 +10,19 @@ from rest_framework.views import APIView
 
 import requests
 
-
-# ✅ GOOGLE LOGIN
 class GoogleLogin(SocialLoginView):
     adapter_class = GoogleOAuth2Adapter
     client_class = OAuth2Client
 
-
-# ✅ FACEBOOK LOGIN
 class FacebookLogin(SocialLoginView):
     adapter_class = FacebookOAuth2Adapter
     client_class = OAuth2Client
 
-
-# ✅ LINKEDIN (PLACEHOLDER)
-class LinkedInLogin(APIView):
-    """Placeholder endpoint for LinkedIn OAuth"""
-
-    def get(self, request):
-        return Response(
-            {
-                "success": False,
-                "error": "LinkedIn login is not configured on the server yet.",
-            },
-            status=status.HTTP_501_NOT_IMPLEMENTED,
-        )
-
-
-# ✅ VERIFY SOCIAL TOKEN
 class VerifySocialToken(APIView):
     def post(self, request):
         provider = request.data.get("provider")
         access_token = request.data.get("access_token")
 
-        # 🔴 Basic validation
         if not provider or not access_token:
             return Response(
                 {"error": "provider and access_token are required"},
@@ -80,14 +59,6 @@ class VerifySocialToken(APIView):
 
                 return Response({"valid": False}, status=status.HTTP_400_BAD_REQUEST)
 
-            # ❌ LINKEDIN (NOT IMPLEMENTED)
-            if provider == "linkedin":
-                return Response(
-                    {"valid": False, "error": "LinkedIn not configured"},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-
-            # ❌ INVALID PROVIDER
             return Response(
                 {"error": "Invalid provider"},
                 status=status.HTTP_400_BAD_REQUEST,

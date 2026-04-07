@@ -140,17 +140,23 @@ class CustomPasswordResetForm(PasswordResetForm):
 
 class CustomPasswordResetSerializer(PasswordResetSerializer):
     """
-    Uses CustomPasswordResetForm which builds the reset URL via
-    custom_password_reset_url_generator, pointing to the React frontend.
-    Completely bypasses Django's default {% url 'password_reset_confirm' %} logic.
+    Bypasses dj_rest_auth's save() entirely so it never builds its own opts
+    dict with Django's default template path containing {% url 'password_reset_confirm' %}.
     """
 
     @property
     def password_reset_form_class(self):
         return CustomPasswordResetForm
 
+    # ✅ THIS is what was missing — without this, dj_rest_auth's save() runs instead
+    def save(self):
+        request = self.context.get('request')
+        self.reset_form.save(
+            use_https=request.is_secure(),
+            request=request,
+        )
+
     def get_email_options(self):
-        # form.save() handles everything directly — no options needed here
         return {}
 
 
