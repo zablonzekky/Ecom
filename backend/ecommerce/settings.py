@@ -133,8 +133,6 @@ REST_AUTH = {
     "OLD_PASSWORD_FIELD_ENABLED": True,
     "PASSWORD_RESET_SERIALIZER": "accounts.serializers.CustomPasswordResetSerializer",
     "PASSWORD_RESET_CONFIRM_SERIALIZER": "accounts.serializers.CustomPasswordResetConfirmSerializer",
-    "PASSWORD_RESET_USE_SITES_DOMAIN": False,
-    "PASSWORD_RESET_URL_GENERATOR": "accounts.utils.custom_password_reset_url_generator",
 }
 # Mpesa
 MPESA_CONSUMER_KEY = os.getenv("MPESA_CONSUMER_KEY")

@@ -21,7 +21,8 @@ import UsersPage from "./pages/admin/Users";
 import AdminOrdersPage from "./pages/admin/Orders";
 import ProductList from "./pages/admin/ProductList";
 import CreateProduct from "./pages/admin/CreateProduct";
-import ProductCategories from "./pages/admin/ProductCategories";
+import ContactMessagesPage from "./pages/admin/ContactMessagesPage";
+import NewsletterPage from "./pages/admin/NewsletterPage";
 import AnalyticsPage from "./pages/analytics/analytics";
 import SettingsPage from "./pages/admin/Settings";
 import { DiscountsPage } from "./Shared/Discounts";
@@ -127,7 +128,7 @@ export default function App() {
               <Route path="/admin/orders/refunds"       element={<AdminOrdersPage />} />
               <Route path="/admin/products"             element={<ProductList />} />
               <Route path="/admin/products/create"      element={<CreateProduct />} />
-              <Route path="/admin/products/categories"  element={<ProductCategories />} />
+              <Route path="/admin/products/categories"  element={<ProductList  />} />
               <Route path="/admin/analytics"            element={<AnalyticsPage />} />
               <Route path="/admin/analytics/sales"      element={<AnalyticsPage />} />
               <Route path="/admin/discounts"            element={<DiscountsPage />} />
@@ -137,6 +138,8 @@ export default function App() {
               <Route path="/admin/logs"                 element={<NotificationsPage />} />
               <Route path="/admin/settings"             element={<SettingsPage />} />
               <Route path="/admin/settings/*"           element={<SettingsPage />} />
+              <Route path="/admin/newsletter" element={<NewsletterPage />} />
+              <Route path="/admin/contacts" element={<ContactMessagesPage />} />
             </Route>
 
             {/* ── Storefront Routes ── */}

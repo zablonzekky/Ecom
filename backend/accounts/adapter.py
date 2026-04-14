@@ -1,37 +1,26 @@
 """
 accounts/adapter.py
 
-Custom allauth adapter that rewrites the password-reset URL
-so it points to the React frontend instead of Django admin.
+Intercepts allauth's send_mail call for password reset so we can
+inject the branded HTML template. The template prefix allauth uses
+is 'account/email/password_reset_key' which resolves to:
+  account/email/password_reset_key_subject.txt
+  account/email/password_reset_key_message.txt
+  account/email/password_reset_key_message.html   ← your branded HTML
 """
 
+from allauth.account.adapter import DefaultAccountAdapter
 from django.conf import settings
-from allauth.account.adapter import DefaultAccountAdapter 
+
 
 class CustomAccountAdapter(DefaultAccountAdapter):
 
     def get_email_confirmation_url(self, request, emailconfirmation):
-        """Keep email confirmation on frontend too (optional)."""
-        frontend = getattr(settings, "FRONTEND_URL", "")
+        frontend = getattr(settings, "FRONTEND_URL", "").rstrip("/")
         return f"{frontend}/verify-email/{emailconfirmation.key}"
 
-    def send_password_reset_mail(self, user, email, extra_context):
-        """
-        Build the reset link using FRONTEND_URL + PASSWORD_RESET_CONFIRM_URL
-        so the email contains e.g.:
-          https://ecombay.onrender.com/reset-password/<uid>/<token>
-        """
-        uid = extra_context.get("uid", "")
-        token = extra_context.get("token", "")
-
-        frontend = getattr(settings, "FRONTEND_URL", "").rstrip("/")
-        path = getattr(
-            settings,
-            "PASSWORD_RESET_CONFIRM_URL",
-            "reset-password/{uid}/{token}",
-        ).format(uid=uid, token=token)
-
-        reset_url = f"{frontend}/{path}"
-        extra_context["password_reset_url"] = reset_url
-
-        super().send_password_reset_mail(user, email, extra_context)
+    # No need to override send_password_reset_mail here.
+    # The url is already fixed by _build_frontend_reset_url in serializers.py
+    # via get_email_options → url_generator kwarg.
+    # The template is picked up automatically from:
+    #   templates/account/email/password_reset_key_message.html

@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { API_BASE_URL } from "../services/api";
 import { showError, showSuccess } from "../services/toast";
-import { Lock, ShieldCheck, CheckCircle } from "lucide-react";
+import { ShieldCheck, CheckCircle } from "lucide-react";
 
 export default function ResetPasswordPage() {
   const { uid, token } = useParams();
@@ -86,34 +86,28 @@ export default function ResetPasswordPage() {
             <label className="block text-sm font-bold text-[#5C4033] mb-2 ml-1 uppercase tracking-wider">
               New Password
             </label>
-            <div className="relative">
-              <input
-                type="password"
-                required
-                value={password.new_password1}
-                onChange={(e) => setPassword({ ...password, new_password1: e.target.value })}
-                className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 pl-11 focus:outline-none focus:ring-2 focus:ring-[#8B4513]/20 focus:border-[#8B4513] transition-all"
-                placeholder="At least 8 characters"
-              />
-              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400" size={18} />
-            </div>
+            <input
+              type="password"
+              required
+              value={password.new_password1}
+              onChange={(e) => setPassword({ ...password, new_password1: e.target.value })}
+              className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#8B4513]/20 focus:border-[#8B4513] transition-all"
+              placeholder="At least 8 characters"
+            />
           </div>
 
           <div>
             <label className="block text-sm font-bold text-[#5C4033] mb-2 ml-1 uppercase tracking-wider">
               Confirm Password
             </label>
-            <div className="relative">
-              <input
-                type="password"
-                required
-                value={password.new_password2}
-                onChange={(e) => setPassword({ ...password, new_password2: e.target.value })}
-                className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 pl-11 focus:outline-none focus:ring-2 focus:ring-[#8B4513]/20 focus:border-[#8B4513] transition-all"
-                placeholder="Repeat new password"
-              />
-              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400" size={18} />
-            </div>
+            <input
+              type="password"
+              required
+              value={password.new_password2}
+              onChange={(e) => setPassword({ ...password, new_password2: e.target.value })}
+              className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#8B4513]/20 focus:border-[#8B4513] transition-all"
+              placeholder="Repeat new password"
+            />
           </div>
 
           <button

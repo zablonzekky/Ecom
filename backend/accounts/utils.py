@@ -6,21 +6,25 @@ from django.utils.encoding import force_bytes
 
 def custom_password_reset_url_generator(request, user, temp_key):
     """
-    Generates a password reset URL pointing to the React frontend.
-    e.g. https://ecombay.onrender.com/reset-password/<uid>/<token>
+    Builds a frontend-facing password reset URL.
+    Priority: settings.FRONTEND_URL -> FRONTEND_URL env var -> request origin -> localhost fallback
     """
-    frontend_url = (
-        getattr(settings, 'FRONTEND_URL', None)
-        or os.getenv('FRONTEND_URL', 'http://localhost:3000')  # ✅ fixed typo
-    ).rstrip('/')                                               # ✅ strip trailing slash
+    frontend_url = getattr(settings, "FRONTEND_URL", None)
 
-    confirm_path = getattr(
-        settings,
-        'PASSWORD_RESET_CONFIRM_URL',
-        'reset-password/{uid}/{token}',
-    )
+    if not frontend_url:
+        frontend_url = os.environ.get("FRONTEND_URL", None)
+
+    # Last resort: derive from the incoming request's origin
+    if not frontend_url and request is not None:
+        scheme = "https" if request.is_secure() else "http"
+        host = request.get_host()  # e.g. "ecombay.onrender.com"
+        frontend_url = f"{scheme}://{host}"
+
+    if not frontend_url:
+        frontend_url = "http://localhost:3000"
+
+    frontend_url = frontend_url.rstrip("/")
 
     uid = urlsafe_base64_encode(force_bytes(user.pk))
-    path = confirm_path.format(uid=uid, token=temp_key)
 
-    return f"{frontend_url}/{path}"
+    return f"{frontend_url}/reset-password/{uid}/{temp_key}"

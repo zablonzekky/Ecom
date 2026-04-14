@@ -3,8 +3,8 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import PasswordResetForm
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
-from django.utils.encoding import force_str
-from django.utils.http import urlsafe_base64_decode
+from django.utils.encoding import force_str, force_bytes
+from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 
 from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -18,6 +18,7 @@ from .models import ContactMessage, NewsletterSubscription
 
 User = get_user_model()
 
+# --- UTILITY SERIALIZERS ---
 
 class NewsletterSubscriptionSerializer(serializers.ModelSerializer):
     class Meta:
@@ -58,6 +59,8 @@ class UserProfileUpdateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Email already in use.")
         return value
 
+
+# --- AUTH SERIALIZERS ---
 
 class RegisterSerializer(serializers.Serializer):
     email = serializers.EmailField(required=True)
@@ -112,66 +115,51 @@ class RegisterSerializer(serializers.Serializer):
         }
 
 
-class CustomPasswordResetForm(PasswordResetForm):
-    def save(self, domain_override=None, use_https=False, request=None, **kwargs):
-        from django.contrib.auth.tokens import default_token_generator
-        from accounts.utils import custom_password_reset_url_generator
+# --- PASSWORD RESET LOGIC ---
 
-        for user in self.get_users(self.cleaned_data["email"]):
-            temp_key = default_token_generator.make_token(user)
-            reset_url = custom_password_reset_url_generator(request, user, temp_key)
+def _build_frontend_reset_url(request, user, temp_key):
+    """
+    Injected as url_generator into AllAuthPasswordResetForm.save().
+    Uses allauth's user_pk_to_url_str so the uid in the link matches
+    what allauth's url_str_to_user_pk decodes on confirm.
+    """
+    import os
+    from allauth.account.utils import user_pk_to_url_str
 
-            context = {
-                "email": user.email,
-                "password_reset_url": reset_url,
-                "user": user,
-                "site_name": "EcomBay",
-            }
+    frontend_url = (
+        getattr(settings, "FRONTEND_URL", None)
+        or os.environ.get("FRONTEND_URL", None)
+    )
 
-            self.send_mail(
-                subject_template_name="registration/password_reset_subject.txt",
-                email_template_name="registration/password_reset_email.txt",
-                context=context,
-                from_email=getattr(settings, "DEFAULT_FROM_EMAIL", None),
-                to_email=user.email,
-                html_email_template_name="registration/password_reset_email.html",
-            )
+    if not frontend_url and request is not None:
+        scheme = "https" if request.is_secure() else "http"
+        frontend_url = f"{scheme}://{request.get_host()}"
+
+    if not frontend_url:
+        frontend_url = "http://localhost:3000"
+
+    frontend_url = frontend_url.rstrip("/")
+    uid = user_pk_to_url_str(user)  # allauth base36 encoder
+    return f"{frontend_url}/reset-password/{uid}/{temp_key}"
 
 
 class CustomPasswordResetSerializer(PasswordResetSerializer):
     """
-    Bypasses dj_rest_auth's save() entirely so it never builds its own opts
-    dict with Django's default template path containing {% url 'password_reset_confirm' %}.
+    Passes our frontend url_generator to AllAuthPasswordResetForm.save()
+    so the reset link points to React, not Django admin.
     """
 
-    @property
-    def password_reset_form_class(self):
-        return CustomPasswordResetForm
-
-    # ✅ THIS is what was missing — without this, dj_rest_auth's save() runs instead
-    def save(self):
-        request = self.context.get('request')
-        self.reset_form.save(
-            use_https=request.is_secure(),
-            request=request,
-        )
-
     def get_email_options(self):
-        return {}
+        return {
+            "url_generator": _build_frontend_reset_url,
+        }
 
 
 class CustomPasswordResetConfirmSerializer(PasswordResetConfirmSerializer):
     """
-    Decodes uid before calling the parent, so validation errors are readable
-    rather than the cryptic {"uid": ["Invalid value"]}.
+    Uses the parent's validate() unchanged — it already handles allauth's
+    base36 uid encoding (url_str_to_user_pk) when allauth is in INSTALLED_APPS.
+    Do NOT override validate() with urlsafe_base64_decode here — that was
+    the bug causing "invalid or already used" errors.
     """
-
-    def validate(self, attrs):
-        try:
-            uid = force_str(urlsafe_base64_decode(attrs.get("uid", "")))
-            User.objects.get(pk=uid)
-        except (User.DoesNotExist, ValueError, TypeError, OverflowError):
-            raise serializers.ValidationError(
-                {"uid": "This reset link is invalid or has already been used."}
-            )
-        return super().validate(attrs)
+    pass

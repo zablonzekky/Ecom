@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { API_BASE_URL } from "../services/api";
 import { showError, showSuccess } from "../services/toast";
-import { Mail, ArrowLeft, Send } from "lucide-react"; // Optional: npm install lucide-react
+import { Mail, ArrowLeft, Send } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 export default function ForgotPasswordPage() {
@@ -49,9 +49,9 @@ export default function ForgotPasswordPage() {
               onClick={() => setSubmitted(false)}
               className="w-full bg-[#8B4513] text-white py-3 rounded-xl font-semibold hover:bg-[#703610] transition-all shadow-md"
             >
-              Try another email
+          Resend the link
             </button>
-            <button 
+            <button
               onClick={() => navigate("/login")}
               className="flex items-center justify-center w-full text-stone-500 hover:text-[#5C4033] font-medium transition-colors"
             >
@@ -69,26 +69,23 @@ export default function ForgotPasswordPage() {
         <div className="mb-8 text-center">
           <h1 className="text-3xl font-bold text-[#5C4033] mb-2">Forgot Password?</h1>
           <p className="text-stone-500">
-            Don't worry, it happens to the best of us. Let's get you back in.
+         Password reset link will be sent to your Email Address if you are already registered.
           </p>
         </div>
 
         <form onSubmit={submit} className="space-y-6">
-          <div className="relative">
+          <div>
             <label className="block text-sm font-bold text-[#5C4033] mb-2 ml-1 uppercase tracking-wider">
               Email Address
             </label>
-            <div className="relative">
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 pl-11 focus:outline-none focus:ring-2 focus:ring-[#8B4513]/20 focus:border-[#8B4513] transition-all"
-                placeholder="Enter your registered email"
-              />
-              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400" size={18} />
-            </div>
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#8B4513]/20 focus:border-[#8B4513] transition-all"
+              placeholder="Enter your registered email"
+            />
           </div>
 
           <button
@@ -108,12 +105,12 @@ export default function ForgotPasswordPage() {
             )}
           </button>
 
-          <button 
+          <button
             type="button"
             onClick={() => navigate("/login")}
             className="w-full text-center text-stone-500 hover:text-[#8B4513] font-medium transition-colors text-sm"
           >
-            Wait, I remember my password!
+            Sign in
           </button>
         </form>
       </div>
