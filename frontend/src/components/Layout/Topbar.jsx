@@ -1,20 +1,25 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, Bell, ChevronDown, LogOut, User, Settings } from 'lucide-react';
+import { Search, Bell, ChevronDown, LogOut, User, Settings, Menu } from 'lucide-react';
 import { useAuth } from '../../context/Authcontext';
 import { useNotifications } from '../../context/NotificationContext';
 import { useNavigate } from 'react-router-dom';
 
-export default function Topbar() {
+export default function Topbar({ onMobileMenuClick }) {
   const { user, logout } = useAuth();
   const { unreadCount } = useNotifications();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const menuRef = useRef(null);
+  const searchRef = useRef(null);
 
   useEffect(() => {
     const handler = (e) => {
       if (menuRef.current && !menuRef.current.contains(e.target)) {
         setMenuOpen(false);
+      }
+      if (searchRef.current && !searchRef.current.contains(e.target)) {
+        setSearchOpen(false);
       }
     };
     document.addEventListener('mousedown', handler);
@@ -32,20 +37,40 @@ export default function Topbar() {
 
   return (
     <header className="topbar">
-      <div className="topbar-search">
-        <Search size={16} className="search-icon" />
-        <input
-          type="text"
-          className="form-control"
-          placeholder="Search..."
-          style={{ paddingLeft: 36, background: 'var(--surface-2)', border: '1px solid var(--border-light)' }}
-        />
+      {/* Left: hamburger (mobile only) + search */}
+      <div className="topbar-left">
+        {/* Hamburger — shown on mobile via CSS */}
+        <button
+          className="mobile-menu-btn"
+          onClick={onMobileMenuClick}
+          aria-label="Open menu"
+        >
+          <Menu size={20} />
+        </button>
+
+        {/* Search — full on desktop, icon-only on mobile */}
+        <div className="topbar-search" ref={searchRef}>
+          <button
+            className="search-icon-btn"
+            onClick={() => setSearchOpen(true)}
+            aria-label="Search"
+          >
+            <Search size={16} className="search-icon-svg" />
+          </button>
+          <input
+            type="text"
+            className={`form-control search-input ${searchOpen ? 'search-input-open' : ''}`}
+            placeholder="Search..."
+          />
+        </div>
       </div>
 
+      {/* Right: notifications + user */}
       <div className="topbar-actions">
         <button
           className="btn-icon notif-btn"
           onClick={() => navigate('admin/notifications')}
+          aria-label="Notifications"
         >
           <Bell size={18} />
           {unreadCount > 0 && (
@@ -59,12 +84,12 @@ export default function Topbar() {
           <button className="user-trigger" onClick={() => setMenuOpen(o => !o)}>
             <div className="avatar-placeholder" style={{ width: 32, height: 32, fontSize: 13 }}>
               {user?.avatar
-                ? <img src={user.avatar} alt="" className="avatar" style={{ width: 32, height: 32 }} />
+                ? <img src={user.avatar} alt="" className="avatar" style={{ width: 32, height: 32, borderRadius: '50%' }} />
                 : initials
               }
             </div>
             <span className="user-name">{user?.first_name || 'Admin'}</span>
-            <ChevronDown size={14} />
+            <ChevronDown size={14} className="chevron-icon" />
           </button>
 
           {menuOpen && (
@@ -94,15 +119,116 @@ export default function Topbar() {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          padding: 0 24px;
+          padding: 0 16px;
           height: 58px;
           background: var(--surface);
           border-bottom: 1px solid var(--border-light);
-          gap: 16px;
+          gap: 12px;
           flex-shrink: 0;
         }
-        .topbar-search { flex: 1; max-width: 360px; position: relative; }
-        .topbar-actions { display: flex; align-items: center; gap: 10px; }
+
+        .topbar-left {
+          display: flex;
+          align-items: center;
+          flex: 1;
+          gap: 8px;
+          min-width: 0;
+        }
+
+        /* Hamburger — hidden on desktop, visible on mobile via AdminLayout CSS */
+        .mobile-menu-btn {
+          display: none;
+          align-items: center;
+          justify-content: center;
+          width: 38px;
+          height: 38px;
+          background: transparent;
+          border: 1px solid var(--border-light);
+          border-radius: 8px;
+          cursor: pointer;
+          color: var(--text-primary);
+          flex-shrink: 0;
+        }
+        .mobile-menu-btn:hover { background: var(--surface-2); }
+
+        @media (max-width: 767px) {
+          .mobile-menu-btn { display: flex; }
+        }
+
+        /* ── Search ── */
+        .topbar-search {
+          position: relative;
+          display: flex;
+          align-items: center;
+          flex: 1;
+          max-width: 360px;
+        }
+
+        .search-icon-btn {
+          position: absolute;
+          left: 10px;
+          background: none;
+          border: none;
+          padding: 0;
+          cursor: pointer;
+          color: var(--text-muted);
+          display: flex;
+          align-items: center;
+          z-index: 1;
+        }
+
+        .search-input {
+          width: 100%;
+          padding-left: 36px;
+          background: var(--surface-2);
+          border: 1px solid var(--border-light);
+          border-radius: 8px;
+          transition: width 0.25s ease, opacity 0.25s ease;
+        }
+
+        /* On mobile: hide text input unless opened */
+        @media (max-width: 767px) {
+          .topbar-search {
+            max-width: 38px;
+            overflow: visible;
+          }
+          .search-icon-btn {
+            position: relative;
+            left: auto;
+            width: 38px;
+            height: 38px;
+            justify-content: center;
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+          }
+          .search-input {
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 0;
+            opacity: 0;
+            padding: 0;
+            pointer-events: none;
+            border: none;
+          }
+          .search-input.search-input-open {
+            width: 200px;
+            opacity: 1;
+            padding-left: 12px;
+            pointer-events: auto;
+            border: 1px solid var(--border-light);
+            left: 44px;
+          }
+        }
+
+        /* ── Actions ── */
+        .topbar-actions {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          flex-shrink: 0;
+        }
 
         .notif-btn { position: relative; }
         .notif-badge {
@@ -126,13 +252,30 @@ export default function Topbar() {
         .user-trigger {
           display: flex; align-items: center; gap: 8px;
           background: transparent; border: none; cursor: pointer;
-          padding: 6px 10px; border-radius: var(--radius-md);
+          padding: 6px 8px; border-radius: var(--radius-md);
           font-family: inherit; font-size: 14px; font-weight: 500;
           color: var(--text-primary);
           transition: background var(--transition);
         }
         .user-trigger:hover { background: var(--surface-2); }
-        .user-name { white-space: nowrap; }
+
+        /* Hide name + chevron on small screens */
+        @media (max-width: 480px) {
+          .user-name { display: none; }
+          .chevron-icon { display: none; }
+          .user-trigger { padding: 4px; }
+        }
+
+        .avatar-placeholder {
+          border-radius: 50%;
+          background: var(--accent-orange, #d97706);
+          color: #fff;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: 600;
+          flex-shrink: 0;
+        }
 
         .user-dropdown {
           position: absolute; right: 0; top: calc(100% + 8px);
@@ -142,7 +285,7 @@ export default function Topbar() {
         }
         .dropdown-header { padding: 14px 16px; }
         .dropdown-name { font-weight: 600; font-size: 14px; }
-        .dropdown-email { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+        .dropdown-email { font-size: 12px; color: var(--text-muted); margin-top: 2px; word-break: break-all; }
         .dropdown-divider { height: 1px; background: var(--border-light); }
         .dropdown-item {
           display: flex; align-items: center; gap: 8px;

@@ -19,6 +19,7 @@ import AdminLoginPage from "./pages/admin/Adminlogin";
 import DashboardPage from "./pages/admin/Dashboard";
 import UsersPage from "./pages/admin/Users";
 import AdminOrdersPage from "./pages/admin/Orders";
+import ProductCategories from "./pages/admin/ProductCategories";
 import ProductList from "./pages/admin/ProductList";
 import CreateProduct from "./pages/admin/CreateProduct";
 import ContactMessagesPage from "./pages/admin/ContactMessagesPage";
@@ -128,7 +129,7 @@ export default function App() {
               <Route path="/admin/orders/refunds"       element={<AdminOrdersPage />} />
               <Route path="/admin/products"             element={<ProductList />} />
               <Route path="/admin/products/create"      element={<CreateProduct />} />
-              <Route path="/admin/products/categories"  element={<ProductList  />} />
+              <Route path="/admin/products/categories"  element={<ProductCategories  />} />
               <Route path="/admin/analytics"            element={<AnalyticsPage />} />
               <Route path="/admin/analytics/sales"      element={<AnalyticsPage />} />
               <Route path="/admin/discounts"            element={<DiscountsPage />} />

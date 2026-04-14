@@ -17,6 +17,7 @@ import {
   Store,
   Mail,
   MessageSquare,
+  X,
 } from "lucide-react";
 
 const NAV_ITEMS = [
@@ -80,7 +81,7 @@ const NAV_ITEMS = [
   },
 ];
 
-function NavItem({ item, collapsed }) {
+function NavItem({ item, collapsed, onNavClick }) {
   const location = useLocation();
   const [open, setOpen] = useState(() =>
     item.children?.some((c) => location.pathname.startsWith(c.path)),
@@ -124,6 +125,7 @@ function NavItem({ item, collapsed }) {
                 className={({ isActive }) =>
                   `nav-child ${isActive ? "nav-child-active" : ""}`
                 }
+                onClick={onNavClick}
                 end
               >
                 {child.label}
@@ -142,6 +144,7 @@ function NavItem({ item, collapsed }) {
         `nav-item ${isActive ? "nav-item-active" : ""}`
       }
       title={collapsed ? item.label : ""}
+      onClick={onNavClick}
       end
     >
       {content}
@@ -149,7 +152,7 @@ function NavItem({ item, collapsed }) {
   );
 }
 
-export default function Sidebar({ collapsed, onToggle }) {
+export default function Sidebar({ collapsed, onToggle, onNavClick }) {
   return (
     <aside className={`sidebar ${collapsed ? "sidebar-collapsed" : ""}`}>
       <div className="sidebar-header">
@@ -159,14 +162,29 @@ export default function Sidebar({ collapsed, onToggle }) {
           </div>
           {!collapsed && <span className="logo-text">Ecombay</span>}
         </div>
-        <button className="sidebar-toggle-btn" onClick={onToggle}>
-          <ChevronRight size={16} className={collapsed ? "" : "rotate-180"} />
+        <button
+          className="sidebar-toggle-btn"
+          onClick={onToggle}
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          {/* On mobile this acts as a close (X) button */}
+          <span className="toggle-icon-desktop">
+            <ChevronRight size={16} className={collapsed ? "" : "rotate-180"} />
+          </span>
+          <span className="toggle-icon-mobile">
+            <X size={16} />
+          </span>
         </button>
       </div>
 
       <nav className="sidebar-nav">
         {NAV_ITEMS.map((item) => (
-          <NavItem key={item.path} item={item} collapsed={collapsed} />
+          <NavItem
+            key={item.path}
+            item={item}
+            collapsed={collapsed}
+            onNavClick={onNavClick}
+          />
         ))}
       </nav>
 
@@ -181,29 +199,35 @@ export default function Sidebar({ collapsed, onToggle }) {
 
         .sidebar {
           width: 220px;
+          min-width: 220px;
           background: var(--sidebar-dark);
           display: flex;
           flex-direction: column;
-          transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                      min-width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
           overflow: hidden;
           flex-shrink: 0;
           height: 100vh;
           border-right: 1px solid rgba(255,255,255,0.05);
         }
-        
-        .sidebar-collapsed { width: 68px; }
+
+        .sidebar-collapsed {
+          width: 68px;
+          min-width: 68px;
+        }
 
         .sidebar-header {
           display: flex;
           align-items: center;
-          padding: 24px 16px;
+          padding: 20px 16px;
           justify-content: space-between;
           position: relative;
+          flex-shrink: 0;
         }
 
         .sidebar-collapsed .sidebar-header {
           justify-content: center;
-          padding: 24px 0;
+          padding: 20px 0;
         }
 
         .sidebar-logo {
@@ -238,12 +262,13 @@ export default function Sidebar({ collapsed, onToggle }) {
           border: 1px solid rgba(255,255,255,0.1);
           color: var(--text-muted);
           cursor: pointer;
-          padding: 4px;
+          padding: 5px;
           border-radius: 6px;
           display: flex;
           align-items: center;
           justify-content: center;
           transition: all 0.2s;
+          flex-shrink: 0;
         }
 
         .sidebar-collapsed .sidebar-toggle-btn {
@@ -252,18 +277,32 @@ export default function Sidebar({ collapsed, onToggle }) {
           background: var(--sidebar-dark);
           z-index: 10;
         }
-        
-        .sidebar-toggle-btn:hover { background: rgba(255,255,255,0.1); color: white; }
+
+        .sidebar-toggle-btn:hover {
+          background: rgba(255,255,255,0.1);
+          color: white;
+        }
+
+        /* Desktop: show chevron, hide X */
+        .toggle-icon-mobile { display: none; }
+        .toggle-icon-desktop { display: flex; }
+
+        /* Mobile: show X (close), hide chevron */
+        @media (max-width: 767px) {
+          .toggle-icon-mobile { display: flex; }
+          .toggle-icon-desktop { display: none; }
+        }
+
         .rotate-180 { transform: rotate(180deg); }
 
         .sidebar-nav {
           flex: 1;
-          padding: 10px;
+          padding: 8px 10px;
           overflow-y: auto;
           overflow-x: hidden;
         }
 
-        .sidebar-collapsed .sidebar-nav { padding: 10px 6px; }
+        .sidebar-collapsed .sidebar-nav { padding: 8px 6px; }
 
         .nav-item {
           display: flex;
@@ -279,6 +318,7 @@ export default function Sidebar({ collapsed, onToggle }) {
           width: 100%;
           cursor: pointer;
           font-family: inherit;
+          font-size: 13.5px;
         }
 
         .sidebar-collapsed .nav-item {
@@ -288,16 +328,16 @@ export default function Sidebar({ collapsed, onToggle }) {
 
         .nav-icon { flex-shrink: 0; transition: transform 0.2s; }
 
-        .nav-item:hover { 
-          background: var(--sidebar-item-bg); 
-          color: var(--text-bright); 
+        .nav-item:hover {
+          background: var(--sidebar-item-bg);
+          color: var(--text-bright);
         }
 
-        .nav-item-active { 
-          background: rgba(217, 119, 6, 0.1) !important; 
-          color: var(--accent-orange) !important; 
+        .nav-item-active {
+          background: rgba(217, 119, 6, 0.1) !important;
+          color: var(--accent-orange) !important;
         }
-        
+
         .nav-item-active .nav-icon { transform: scale(1.1); }
 
         .nav-label {
@@ -321,7 +361,7 @@ export default function Sidebar({ collapsed, onToggle }) {
 
         .nav-child {
           display: block;
-          padding: 6px 0;
+          padding: 7px 0;
           color: #7a7471;
           text-decoration: none;
           font-size: 13px;
@@ -330,9 +370,12 @@ export default function Sidebar({ collapsed, onToggle }) {
 
         .nav-child:hover { color: var(--text-bright); }
         .nav-child-active { color: var(--accent-orange) !important; font-weight: 600; }
-        
+
         .sidebar-nav::-webkit-scrollbar { width: 4px; }
-        .sidebar-nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.05); border-radius: 10px; }
+        .sidebar-nav::-webkit-scrollbar-thumb {
+          background: rgba(255,255,255,0.05);
+          border-radius: 10px;
+        }
       `}</style>
     </aside>
   );
