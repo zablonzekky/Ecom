@@ -4,7 +4,7 @@ import { useAppContext } from "../context/AppContext";
 import { ShoppingCart, User, X, Menu, Search } from "lucide-react";
 
 function Navbar({ mobileMenuOpen, setMobileMenuOpen }) {
-  const { user, cart, logout } = useAppContext();
+  const { user, cart, logout, categories } = useAppContext();
   const [searchOpen, setSearchOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const navigate = useNavigate();
@@ -14,14 +14,14 @@ function Navbar({ mobileMenuOpen, setMobileMenuOpen }) {
     0
   );
 
-  const navLinks = [
+ const navLinks = [
     { to: "/", label: "Home" },
     { to: "/shop", label: "Shop" },
-    { to: "/men", label: "Men" },
-    { to: "/women", label: "Women" },
-    { to: "/shoes", label: "Shoes" },
-    { to: "/accessories", label: "Accessories" },
-  ];
+    ...categories.map((cat) => ({
+        to: `/${cat.slug}`,
+        label: cat.name,
+    })),
+];
 
   return (
     <header className="fixed top-0 left-0 right-0 bg-[#FDFBF9] shadow-md z-50 border-b border-[#EADBC8] backdrop-blur-sm">

@@ -48,6 +48,7 @@ import AboutPage from "./pages/AboutPage";
 import ContactPage from "./pages/ContactPage";
 import MenPage from "./pages/MenPage";
 import WomenPage from "./pages/WomenPage";
+import CategoryPage from "./pages/CategoryPage";
 import FaqsPage from "./constants/FaqsPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
@@ -158,6 +159,7 @@ export default function App() {
                   <Route path="/women"                          element={<WomenPage />} />
                   <Route path="/accessories"                    element={<AccessoriesPage />} />
                   <Route path="/shoes"                          element={<ShoesPage />} />
+                  <Route path="/:categorySlug" element={<CategoryPage />} />
                   <Route path="/cart"                           element={<CartPage />} />
                   <Route path="/orders"                         element={<OrderPage />} />
                   <Route path="/orders/:orderId/confirmation"   element={<ProtectedRoute><OrderConfirmationPage /></ProtectedRoute>} />

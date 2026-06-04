@@ -24,8 +24,8 @@ function CategoryForm({ initial, onSubmit, onClose, loading }) {
     name:        initial.name        || '',
     gender:      initial.gender      || 'U',
     description: initial.description || '',
-    is_featured: initial.is_featured ?? false,
-  } : { name: '', gender: 'U', description: '', is_featured: false });
+    is_active:   initial.is_active   ?? true,   // ← was is_featured, now is_active
+  } : { name: '', gender: 'U', description: '', is_active: true });
 
   const [imageFile,    setImageFile]    = useState(null);
   const [imagePreview, setImagePreview] = useState(getImageUrl(initial?.image));
@@ -121,25 +121,25 @@ function CategoryForm({ initial, onSubmit, onClose, loading }) {
         )}
       </div>
 
-      {/* Is Featured toggle */}
+      {/* Is Active toggle */}
       <div className="form-group mb-6">
-        <label className="form-label">Featured Category</label>
+        <label className="form-label">Status</label>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 6 }}>
           <label style={{ position: 'relative', cursor: 'pointer' }}>
             <input
               type="checkbox"
-              checked={form.is_featured}
-              onChange={e => setForm(f => ({ ...f, is_featured: e.target.checked }))}
+              checked={form.is_active}
+              onChange={e => setForm(f => ({ ...f, is_active: e.target.checked }))}
               style={{ display: 'none' }}
             />
             <div style={{
               width: 44, height: 24, borderRadius: 12,
-              background: form.is_featured ? 'var(--primary)' : 'var(--border)',
+              background: form.is_active ? 'var(--primary)' : 'var(--border)',
               position: 'relative', transition: 'background 0.2s',
             }}>
               <div style={{
                 position: 'absolute', top: 3,
-                left: form.is_featured ? 23 : 3,
+                left: form.is_active ? 23 : 3,
                 width: 18, height: 18, borderRadius: '50%',
                 background: 'white', transition: 'left 0.2s',
                 boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
@@ -147,7 +147,7 @@ function CategoryForm({ initial, onSubmit, onClose, loading }) {
             </div>
           </label>
           <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
-            {form.is_featured ? 'Featured on homepage' : 'Not featured'}
+            {form.is_active ? 'Active (visible in store)' : 'Inactive (hidden from store)'}
           </span>
         </div>
       </div>
@@ -186,12 +186,10 @@ export default function ProductCategories() {
 
   useEffect(() => { fetchCategories(); }, []);
 
-  // Build FormData so image file is included
   const buildFormData = (data, imageFile) => {
     const fd = new FormData();
     Object.entries(data).forEach(([k, v]) => {
       if (v === null || v === undefined) return;
-      // booleans must be sent as strings for Django
       fd.append(k, typeof v === 'boolean' ? String(v) : v);
     });
     if (imageFile) fd.append('image', imageFile);
@@ -279,7 +277,7 @@ export default function ProductCategories() {
                   <th>Image</th>
                   <th>Slug</th>
                   <th>Gender</th>
-                  <th>Featured</th>
+                  <th>Status</th>
                   <th>Description</th>
                   <th>Products</th>
                   <th>Actions</th>
@@ -342,10 +340,10 @@ export default function ProductCategories() {
                         <span style={{
                           display: 'inline-flex', padding: '2px 10px', borderRadius: 20,
                           fontSize: 12, fontWeight: 600,
-                          background: cat.is_featured ? 'var(--success-bg, #d1fae5)' : 'var(--surface-2)',
-                          color: cat.is_featured ? 'var(--success, #059669)' : 'var(--text-muted)',
+                          background: cat.is_active ? 'var(--success-bg, #d1fae5)' : 'var(--surface-2)',
+                          color: cat.is_active ? 'var(--success, #059669)' : 'var(--text-muted)',
                         }}>
-                          {cat.is_featured ? 'Featured' : 'Standard'}
+                          {cat.is_active ? 'Active' : 'Inactive'}
                         </span>
                       </td>
                       <td style={{ color: 'var(--text-muted)', fontSize: 13 }}>

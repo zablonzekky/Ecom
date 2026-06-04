@@ -127,14 +127,19 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  useEffect(() => {
+ useEffect(() => {
     const fetchAll = async () => {
       try {
         setIsLoading(true);
-        const res = await api.get("/products/");
-        setProducts(res.data.results || res.data);
+        const [productsRes, categoriesRes] = await Promise.all([
+          api.get("/products/"),
+          api.get("/products/categories/"),
+        ]);
+        setProducts(productsRes.data.results || productsRes.data);
+        const cats = categoriesRes.data.results || categoriesRes.data || [];
+        setCategories(cats.filter((c) => c.is_active));
       } catch (err) {
-        console.error("Failed to fetch products:", err);
+        console.error("Failed to fetch data:", err);
         setProducts([]);
       } finally {
         setIsLoading(false);
