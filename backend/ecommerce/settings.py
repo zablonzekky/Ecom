@@ -15,7 +15,7 @@ SECRET_KEY = os.getenv(
     "unsafe-development-key-change-in-production",
 )
 
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = os.getenv(
     "ALLOWED_HOSTS",
