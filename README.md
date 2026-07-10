@@ -305,5 +305,3 @@ Backed by data from the `orders`, `products`, and `accounts` apps, surfaced thro
 ---
 
 ## License
-
-Specify your project license here (e.g., MIT).
